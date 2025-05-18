@@ -55,8 +55,17 @@ function RootLayoutNav() {
           name="habit/[id]" 
           options={{ 
             title: "Habit Details",
-            headerBackTitle: "Dashboard"
+            headerBackTitle: "Dashboard",
+            headerShown: false,
           }} 
+        />
+        <Stack.Screen 
+          name="habit/ActivityCaptureScreen" 
+          options={{ 
+            title: "Capture Activity",
+            headerBackTitle: "Habit Details",
+            headerShown: false,
+          }}
         />
       </Stack>
     </ThemeProvider>

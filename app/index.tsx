@@ -2,14 +2,15 @@ import { StyleSheet, View, Text, ScrollView, SafeAreaView } from 'react-native';
 import Card from '../components/Card';
 
 export default function MainScreen() {
-  const cardData = [
-    { iconName: 'calendar-outline', title: 'Calendar', status: 'Active', color: '#2ecc71' },
-    { iconName: 'fitness-outline', title: 'Fitness', status: 'In Progress', color: '#e74c3c' },
-    { iconName: 'water-outline', title: 'Hydration', status: 'Great', color: '#3498db' },
-    { iconName: 'bed-outline', title: 'Sleep', status: 'Needs Attention', color: '#f39c12' },
-    { iconName: 'restaurant-outline', title: 'Nutrition', status: 'Good', color: '#9b59b6' },
-    { iconName: 'heart-outline', title: 'Health', status: 'Excellent', color: '#16a085' },
-  ];
+const cardData = [
+  { iconName: 'walk-outline', title: 'Running', status: 'Improving', color: '#27ae60' },
+  { iconName: 'trending-up-outline', title: 'Climbing', status: 'Getting Started', color: '#e67e22' },
+  { iconName: 'book-outline', title: 'Reading', status: 'Consistent', color: '#2980b9' },
+  { iconName: 'brush-outline', title: 'Cleaning', status: 'Good Effort', color: '#8e44ad' },
+  { iconName: 'leaf-outline', title: 'Meditation', status: 'Growing', color: '#16a085' },
+  { iconName: 'nutrition-outline', title: 'Healthy Eating', status: 'Stable', color: '#c0392b' },
+];
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
+    paddingTop: 32,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,

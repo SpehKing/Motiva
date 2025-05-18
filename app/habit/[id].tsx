@@ -6,13 +6,14 @@ import { LineChart } from 'react-native-chart-kit';
 
 // Sample data - in a real app, this would come from a database or API
 const weeklyData = {
-  'Calendar': [2, 3, 1, 4, 2, 3, 2],
-  'Fitness': [3, 0, 4, 2, 3, 1, 0],
-  'Hydration': [7, 5, 6, 8, 6, 7, 5],
-  'Sleep': [4, 5, 6, 3, 5, 4, 6],
-  'Nutrition': [3, 2, 4, 1, 3, 2, 4],
-  'Health': [1, 2, 3, 2, 2, 1, 3],
+  'Running': [1, 2, 3, 2, 4, 3, 2],
+  'Climbing': [0, 1, 0, 2, 1, 1, 0],
+  'Reading': [3, 4, 3, 5, 4, 4, 5],
+  'Cleaning': [2, 1, 2, 3, 2, 2, 1],
+  'Meditation': [1, 2, 1, 2, 3, 2, 3],
+  'Healthy Eating': [4, 3, 4, 3, 5, 4, 4],
 };
+
 
 const chartConfig = {
   backgroundColor: '#ffffff',
@@ -111,7 +112,7 @@ export default function HabitDetailScreen() {
             
             <TouchableOpacity 
               style={[styles.completeButton, { backgroundColor: habitColor }]}
-              onPress={() => alert('Habit marked as completed for today!')}
+              onPress={() => router.navigate('/habit/ActivityCaptureScreen')}
               activeOpacity={0.8}
             >
               <Text style={styles.completeButtonText}>Complete for Today</Text>
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
+    paddingTop: 16,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
