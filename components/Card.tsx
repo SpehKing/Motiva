@@ -30,7 +30,7 @@ export default function Card({ iconName, title, status, color = '#3498db', id = 
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName as any} size={30} color={color} />
+        <Ionicons name={iconName as any} size={45} color={color} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={[styles.status, { color }]}>{status}</Text>
@@ -40,7 +40,7 @@ export default function Card({ iconName, title, status, color = '#3498db', id = 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFBF6',
     borderRadius: 10,
     padding: 16,
     margin: 8,

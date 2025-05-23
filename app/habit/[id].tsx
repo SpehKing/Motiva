@@ -16,15 +16,15 @@ const weeklyData = {
 
 
 const chartConfig = {
-  backgroundColor: '#ffffff',
-  backgroundGradientFrom: '#ffffff',
-  backgroundGradientTo: '#ffffff',
+  backgroundColor: '#FFFBF6',
+  backgroundGradientFrom: '#FFFBF6',
+  backgroundGradientTo: '#FFFBF6',
   decimalPlaces: 0,
   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   style: {
     borderRadius: 16,
-  },
+  }, 
   propsForDots: {
     r: '6',
     strokeWidth: '2',
@@ -53,11 +53,19 @@ export default function HabitDetailScreen() {
 
   const screenWidth = Dimensions.get('window').width - 32; // Full width minus padding
   
+  const handlePress = () => {
+    // Convert title to a simple string id for the route
+    router.push({
+      pathname: '/habit/ActivityCaptureScreen',
+      params: {color }
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Ionicons name={habitIcon as any} size={40} color={habitColor} />
+          <Ionicons name={habitIcon as any} style={styles.icon}size={45} color={habitColor}/>
           <Text style={styles.title}>{habitTitle}</Text>
         </View>
         
@@ -95,11 +103,12 @@ export default function HabitDetailScreen() {
                     }
                   ]
                 }}
-                width={screenWidth}
+                width={screenWidth-40}
                 height={220}
                 chartConfig={chartConfig}
                 bezier
                 style={styles.chart}
+                
               />
             </View>
             
@@ -112,8 +121,10 @@ export default function HabitDetailScreen() {
             
             <TouchableOpacity 
               style={[styles.completeButton, { backgroundColor: habitColor }]}
-              onPress={() => router.navigate('/habit/ActivityCaptureScreen')}
+              onPress={handlePress}
+              //onPress={() => router.navigate('/habit/ActivityCaptureScreen')}
               activeOpacity={0.8}
+              
             >
               <Text style={styles.completeButtonText}>Complete for Today</Text>
             </TouchableOpacity>
@@ -127,28 +138,33 @@ export default function HabitDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#314146',
   },
   container: {
+    alignItems: 'center',
     flex: 1,
     padding: 16,
   },
   header: {
-    paddingTop: 16,
+    paddingTop: 32,
     flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 24,
   },
+  icon: {
+    position: 'relative',
+    paddingRight: 10,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
-    marginLeft: 12,
+    textAlign: 'center',
+    color: '#FFFBF6',
   },
   scrollContent: {
     flexGrow: 1,
   },
   statsContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#5D737A',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -165,6 +181,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#FFFBF6',
   },
   statsRow: {
     flexDirection: 'row',
@@ -175,7 +192,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FFFBF6',
     borderRadius: 8,
     marginHorizontal: 4,
   },
@@ -197,13 +214,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     textAlign: 'center',
+    color: '#FFFBF6',
   },
   chart: {
     marginVertical: 8,
     borderRadius: 16,
   },
   tipsContainer: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FFFBF6',
     borderRadius: 8,
     padding: 16,
   },
@@ -232,7 +250,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   completeButtonText: {
-    color: 'white',
+    color: '#FFFBF6',
     fontSize: 16,
     fontWeight: 'bold',
   },

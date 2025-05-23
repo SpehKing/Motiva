@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   imageUriToBase64,
   verifyActivity as verifyActivityAI,
@@ -33,7 +33,9 @@ export default function ActivityCaptureScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const {color} = useLocalSearchParams();
   const router = useRouter();
+  const habitColor = color as string;
 
   // In a production app this would be passed via route params.
   const activityDescription = 'Programming on a computer';
@@ -124,7 +126,7 @@ export default function ActivityCaptureScreen() {
       )}
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View style={styles.controls} >
         {photoUri ? (
           <>
             <TouchableOpacity
@@ -152,9 +154,10 @@ export default function ActivityCaptureScreen() {
           </>
         ) : (
           <TouchableOpacity
-            style={styles.btn}
+            style={[styles.btn, { backgroundColor: habitColor }]}
             disabled={!isCameraReady}
             onPress={handleCapture}
+            
           >
             <Ionicons name="camera" size={22} color="#fff" />
             <Text style={styles.btnText}>Capture</Text>
@@ -196,7 +199,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3498db',
+    //backgroundColor: '#3498db',
     borderRadius: 10,
     paddingVertical: 16,
     marginBottom: 12,
