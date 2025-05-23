@@ -115,11 +115,13 @@ cardText: {
     backgroundColor: '#FFF47B',
     paddingVertical: 14,
     paddingHorizontal: 40,
-    borderRadius: 30,
+    width: '100%',
+    borderRadius: 10,
   },
   buttonText: {
     fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
     color: '#314146',
   },
 });

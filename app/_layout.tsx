@@ -75,6 +75,14 @@ function RootLayoutNav() {
             headerShown: false,
             }}
           />
+        <Stack.Screen
+          name="habit/NewHabit"
+          options={{
+            title: "New Habit",
+            headerTitle: 'New Habit',
+            headerShown: false,
+            }}
+          />
       </Stack>
     </ThemeProvider>
   );

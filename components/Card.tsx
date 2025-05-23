@@ -8,20 +8,35 @@ type CardProps = {
   title: string;
   status: string;
   color?: string;
+  scanMethod?: string;
   id?: string;
 };
 
-export default function Card({ iconName, title, status, color = '#3498db', id = '0' }: CardProps) {
+export default function Card({ iconName, title, status, scanMethod, color = '#3498db', id = '0' }: CardProps) {
   const router = useRouter();
   
   const handlePress = () => {
-    // Convert title to a simple string id for the route
-    const cardId = title.toLowerCase().replace(/\s+/g, '-');
+  const cardId = title.toLowerCase().replace(/\s+/g, '-');
+  const normalizedStatus = status.trim().toLowerCase();
+
+  if (normalizedStatus === 'not done') {
     router.push({
-      pathname: "/habit/[id]",
-      params: { id: cardId, title, iconName, color }
+      pathname: '/habit/ActivityCaptureScreen',
+      params: { color },
     });
-  };
+  } else if (normalizedStatus === 'done') {
+    router.push({
+      pathname: '/habit/[id]',
+      params: { id: cardId, title, iconName, scanMethod, color },
+    });
+  } else if (normalizedStatus === 'no habit') {
+    router.push({
+      pathname: '/habit/NewHabit',
+    });
+  } else {
+    console.warn('Unrecognized status:', status);
+  }
+};
   
   return (
     <TouchableOpacity 

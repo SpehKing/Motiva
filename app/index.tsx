@@ -19,12 +19,12 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function MainScreen() {
   const cardData = [
-    { iconName: 'walk-outline', title: 'Running', status: 'Done', color: '#27ae60' },
-    { iconName: 'trending-up-outline', title: 'Climbing', status: 'Done', color: '#e67e22' },
-    { iconName: 'book-outline', title: 'Reading', status: 'Not Done', color: '#2980b9' },
-    { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', color: '#8e44ad' },
-    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', color: '#5D737A' },
-    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', color: '#5D737A' },
+    { iconName: 'walk-outline', title: 'Running', status: 'Done', scanMethod: 'Take a picture of the path', color: '#27ae60' },
+    { iconName: 'trending-up-outline', title: 'Climbing', status: 'Done', scanMethod: 'Take a picture of the climbing wall/climbing gym', color: '#e67e22' },
+    { iconName: 'book-outline', title: 'Reading', status: 'Not Done', scanMethod: 'Take a picture of the book', color: '#2980b9' },
+    { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', scanMethod: 'Take a picture of a clean apartment', color: '#8e44ad' },
+    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
+    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
   ];
 
   const [isPanelOpen, setPanelOpen] = useState(false);
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   position: 'absolute',
   bottom: 20,
   right: 20,
-  zIndex: 10,
+  zIndex: 5,
   backgroundColor: '#5D737A',
   borderRadius: 30,
   padding: 12,

@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 32,
     flexDirection: 'row',
-    marginBottom: 24,
   },
   icon: {
     position: 'relative',
@@ -174,6 +173,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#FFFBF6',
+    paddingBottom: 32,
   },
   scrollContent: {
     flexGrow: 1,
