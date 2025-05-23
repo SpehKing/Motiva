@@ -64,6 +64,9 @@ export default function HabitDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
         <View style={styles.header}>
           <Ionicons name={habitIcon as any} style={styles.icon}size={45} color={habitColor}/>
           <Text style={styles.title}>{habitTitle}</Text>
@@ -144,6 +147,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     flex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#5D737A',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     paddingTop: 32,

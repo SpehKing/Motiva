@@ -19,12 +19,12 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function MainScreen() {
   const cardData = [
-    { iconName: 'walk-outline', title: 'Running', status: 'Improving', color: '#27ae60' },
-    { iconName: 'trending-up-outline', title: 'Climbing', status: 'Getting Started', color: '#e67e22' },
-    { iconName: 'book-outline', title: 'Reading', status: 'Consistent', color: '#2980b9' },
-    { iconName: 'brush-outline', title: 'Cleaning', status: 'Good Effort', color: '#8e44ad' },
-    { iconName: 'leaf-outline', title: 'Meditation', status: 'Growing', color: '#16a085' },
-    { iconName: 'nutrition-outline', title: 'Healthy Eating', status: 'Stable', color: '#c0392b' },
+    { iconName: 'walk-outline', title: 'Running', status: 'Done', color: '#27ae60' },
+    { iconName: 'trending-up-outline', title: 'Climbing', status: 'Done', color: '#e67e22' },
+    { iconName: 'book-outline', title: 'Reading', status: 'Not Done', color: '#2980b9' },
+    { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', color: '#8e44ad' },
+    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', color: '#5D737A' },
+    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', color: '#5D737A' },
   ];
 
   const [isPanelOpen, setPanelOpen] = useState(false);
@@ -55,11 +55,6 @@ const closePanel = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Settings button */}
-        <TouchableOpacity style={styles.settingsButton} onPress={openPanel}>
-          <Ionicons name="settings-outline" size={28} color="#FFFBF6" />
-        </TouchableOpacity>
-
         <Text style={styles.title}>Motiva Dashboard</Text>
 
         <View style={styles.progressContainer}>
@@ -115,6 +110,12 @@ const closePanel = () => {
             />
           </View>
         </Animated.View>
+
+        {/* Settings button */}
+        <TouchableOpacity style={styles.settingsButton} onPress={openPanel}>
+          <Ionicons name="settings-outline" size={28} color="#FFFBF6" />
+        </TouchableOpacity>
+        
       </View>
     </SafeAreaView>
   );

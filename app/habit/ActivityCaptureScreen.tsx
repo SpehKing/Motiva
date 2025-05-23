@@ -110,7 +110,16 @@ export default function ActivityCaptureScreen() {
    * UI
    * -----------------------------------------------------------------------*/
   return (
+    
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={styles.backButton}
+      >
+        <Ionicons name="arrow-back" size={20} color="#fff" />
+      </TouchableOpacity>
+
       {/* Camera preview OR captured image */}
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.preview} />
@@ -184,6 +193,18 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#000',
   },
+    backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   permissionText: { textAlign: 'center', color: '#fff', marginBottom: 24 },
   permissionBtn: {
     flexDirection: 'row',
@@ -199,7 +220,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    //backgroundColor: '#3498db',
     borderRadius: 10,
     paddingVertical: 16,
     marginBottom: 12,
