@@ -103,7 +103,7 @@ export default function HabitDetailScreen() {
                     }
                   ]
                 }}
-                width={screenWidth-40}
+                width={screenWidth-50}
                 height={220}
                 chartConfig={chartConfig}
                 bezier
@@ -142,8 +142,8 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: 'center',
-    flex: 1,
     padding: 16,
+    flex: 1,
   },
   header: {
     paddingTop: 32,

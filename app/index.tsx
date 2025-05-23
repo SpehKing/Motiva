@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import { Switch } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -30,6 +31,7 @@ export default function MainScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const PANEL_HEIGHT = 250;
   const slideAnim = useRef(new Animated.Value(-PANEL_HEIGHT)).current;
+  const router = useRouter();
 
 const openPanel = () => {
   setPanelOpen(true);
@@ -97,8 +99,11 @@ const closePanel = () => {
         {/* Sliding Panel */}
         <Animated.View style={[styles.sidePanel, { bottom: slideAnim }]}>
           <Text style={styles.panelTitle}>Settings</Text>
-          <TouchableOpacity style={styles.panelButton}>
+          <TouchableOpacity 
+            style={styles.panelButton}
+            onPress={() => router.navigate('/habit/HowItWorks')}>
             <Text style={styles.panelButtonText}>How it works</Text>
+
           </TouchableOpacity>
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Enable Notifications</Text>
