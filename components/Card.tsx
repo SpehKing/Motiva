@@ -8,20 +8,35 @@ type CardProps = {
   title: string;
   status: string;
   color?: string;
+  scanMethod?: string;
   id?: string;
 };
 
-export default function Card({ iconName, title, status, color = '#3498db', id = '0' }: CardProps) {
+export default function Card({ iconName, title, status, scanMethod, color = '#3498db', id = '0' }: CardProps) {
   const router = useRouter();
   
   const handlePress = () => {
-    // Convert title to a simple string id for the route
-    const cardId = title.toLowerCase().replace(/\s+/g, '-');
+  const cardId = title.toLowerCase().replace(/\s+/g, '-');
+  const normalizedStatus = status.trim().toLowerCase();
+
+  if (normalizedStatus === 'not done') {
     router.push({
-      pathname: "/habit/[id]",
-      params: { id: cardId, title, iconName, color }
+      pathname: '/habit/ActivityCaptureScreen',
+      params: { color },
     });
-  };
+  } else if (normalizedStatus === 'done') {
+    router.push({
+      pathname: '/habit/[id]',
+      params: { id: cardId, title, iconName, scanMethod, color },
+    });
+  } else if (normalizedStatus === 'no habit') {
+    router.push({
+      pathname: '/habit/NewHabit',
+    });
+  } else {
+    console.warn('Unrecognized status:', status);
+  }
+};
   
   return (
     <TouchableOpacity 
@@ -30,7 +45,7 @@ export default function Card({ iconName, title, status, color = '#3498db', id = 
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName as any} size={30} color={color} />
+        <Ionicons name={iconName as any} size={45} color={color} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={[styles.status, { color }]}>{status}</Text>
@@ -40,7 +55,7 @@ export default function Card({ iconName, title, status, color = '#3498db', id = 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFBF6',
     borderRadius: 10,
     padding: 16,
     margin: 8,

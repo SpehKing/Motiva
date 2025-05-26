@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   imageUriToBase64,
   verifyActivity as verifyActivityAI,
@@ -33,7 +33,9 @@ export default function ActivityCaptureScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const {color} = useLocalSearchParams();
   const router = useRouter();
+  const habitColor = color as string;
 
   // In a production app this would be passed via route params.
   const activityDescription = 'Programming on a computer';
@@ -108,7 +110,16 @@ export default function ActivityCaptureScreen() {
    * UI
    * -----------------------------------------------------------------------*/
   return (
+    
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={styles.backButton}
+      >
+        <Ionicons name="arrow-back" size={20} color="#fff" />
+      </TouchableOpacity>
+
       {/* Camera preview OR captured image */}
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.preview} />
@@ -124,7 +135,7 @@ export default function ActivityCaptureScreen() {
       )}
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View style={styles.controls} >
         {photoUri ? (
           <>
             <TouchableOpacity
@@ -152,9 +163,10 @@ export default function ActivityCaptureScreen() {
           </>
         ) : (
           <TouchableOpacity
-            style={styles.btn}
+            style={[styles.btn, { backgroundColor: habitColor }]}
             disabled={!isCameraReady}
             onPress={handleCapture}
+            
           >
             <Ionicons name="camera" size={22} color="#fff" />
             <Text style={styles.btnText}>Capture</Text>
@@ -181,6 +193,18 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#000',
   },
+    backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   permissionText: { textAlign: 'center', color: '#fff', marginBottom: 24 },
   permissionBtn: {
     flexDirection: 'row',
@@ -196,7 +220,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3498db',
     borderRadius: 10,
     paddingVertical: 16,
     marginBottom: 12,
