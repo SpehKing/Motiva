@@ -24,7 +24,6 @@ export default function MainScreen() {
     { iconName: 'book-outline', title: 'Reading', status: 'Not Done', scanMethod: 'Take a picture of the book', color: '#2980b9' },
     { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', scanMethod: 'Take a picture of a clean apartment', color: '#8e44ad' },
     { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
-    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
   ];
 
   const [isPanelOpen, setPanelOpen] = useState(false);

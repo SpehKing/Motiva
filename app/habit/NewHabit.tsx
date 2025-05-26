@@ -73,7 +73,7 @@ export default function CreateHabitScreen() {
           />
 
           <Text style={styles.title1}>How would you like to scan for completing your habit?</Text>
-          {/* Scaning metod input */}
+          {/* Scanning metod input */}
           <TextInput
             style={styles.input2}
             placeholder="Scanning method"
