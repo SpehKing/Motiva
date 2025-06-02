@@ -16,6 +16,7 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     assetBundlePatterns: ["**/*"],
+    plugins: ["expo-sqlite"],
     ios: {
       supportsTablet: true,
     },

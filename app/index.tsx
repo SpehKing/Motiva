@@ -9,11 +9,14 @@ import {
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import { Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { runDatabaseTest } from '../utils/databaseTest';
+import { initializeDatabase } from '../db';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -79,6 +82,20 @@ export default function MainScreen() {
     }
   }, [params.newHabit]);
 
+  // Initialize database on app startup
+  useEffect(() => {
+    const setupDatabase = async () => {
+      try {
+        await initializeDatabase();
+        console.log('✅ Database initialized on app startup');
+      } catch (error) {
+        console.error('❌ Failed to initialize database:', error);
+      }
+    };
+    
+    setupDatabase();
+  }, []);
+
   // Calculate progress based on completed habits
   const calculateProgress = () => {
     const habitsWithoutNewHabit = cardData.filter(card => card.title !== 'New Habit');
@@ -110,6 +127,21 @@ const closePanel = () => {
   }).start(() => {
     setPanelOpen(false);
   });
+};
+
+// Database test function
+const handleDatabaseTest = async () => {
+  try {
+    const success = await runDatabaseTest();
+    if (success) {
+      Alert.alert('Database Test', 'Database test completed successfully! Check console for details.');
+    } else {
+      Alert.alert('Database Test', 'Database test failed. Check console for details.');
+    }
+  } catch (error) {
+    console.error('Database test error:', error);
+    Alert.alert('Database Test', 'Database test encountered an error. Check console for details.');
+  }
 };
 
   return (
@@ -159,8 +191,14 @@ const closePanel = () => {
             style={styles.panelButton}
             onPress={() => router.navigate('/habit/HowItWorks')}>
             <Text style={styles.panelButtonText}>How it works</Text>
-
           </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.panelButton}
+            onPress={handleDatabaseTest}>
+            <Text style={styles.panelButtonText}>Test Database</Text>
+          </TouchableOpacity>
+          
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Enable Notifications</Text>
             <Switch
