@@ -32,11 +32,12 @@ const chartConfig = {
 };
 
 export default function HabitDetailScreen() {
-  const { id, title, iconName, color } = useLocalSearchParams();
+  const { id, title, iconName, color, scanMethod } = useLocalSearchParams();
   const router = useRouter();
   const habitTitle = title as string;
   const habitColor = color as string;
   const habitIcon = iconName as string;
+  const habitScanMethod = scanMethod as string;
   
   // Get data for this specific habit (or use empty array if not found)
   const habitData = weeklyData[habitTitle as keyof typeof weeklyData] || [0, 0, 0, 0, 0, 0, 0];
@@ -57,7 +58,7 @@ export default function HabitDetailScreen() {
     // Convert title to a simple string id for the route
     router.push({
       pathname: '/habit/ActivityCaptureScreen',
-      params: {color }
+      params: {color, scanMethod: habitScanMethod }
     });
   };
 

@@ -33,12 +33,12 @@ export default function ActivityCaptureScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const {color} = useLocalSearchParams();
+  const {color, scanMethod} = useLocalSearchParams();
   const router = useRouter();
   const habitColor = color as string;
 
-  // In a production app this would be passed via route params.
-  const activityDescription = 'Programming on a computer';
+  // Get the activity description from route params
+  const activityDescription = scanMethod as string || 'Programming on a computer';
 
   /* -------------------------------------------------------------------------
    * Helpers

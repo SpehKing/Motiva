@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -17,20 +17,81 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+// Define the habit type
+type HabitData = {
+  iconName: string;
+  title: string;
+  status: string;
+  scanMethod: string;
+  color: string;
+};
+
 export default function MainScreen() {
-  const cardData = [
+  const [cardData, setCardData] = useState<HabitData[]>([
     { iconName: 'walk-outline', title: 'Running', status: 'Done', scanMethod: 'Take a picture of the path', color: '#27ae60' },
     { iconName: 'trending-up-outline', title: 'Climbing', status: 'Done', scanMethod: 'Take a picture of the climbing wall/climbing gym', color: '#e67e22' },
     { iconName: 'book-outline', title: 'Reading', status: 'Not Done', scanMethod: 'Take a picture of the book', color: '#2980b9' },
     { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', scanMethod: 'Take a picture of a clean apartment', color: '#8e44ad' },
     { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
-  ];
+  ]);
 
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const PANEL_HEIGHT = 250;
   const slideAnim = useRef(new Animated.Value(-PANEL_HEIGHT)).current;
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // Function to add a new habit
+  const addNewHabit = (newHabit: Omit<HabitData, 'status'>) => {
+    const habitWithStatus: HabitData = {
+      ...newHabit,
+      status: 'Not Done'
+    };
+    
+    // Remove the "New Habit" card and add the new habit before it
+    const updatedCardData = cardData.filter(card => card.title !== 'New Habit');
+    updatedCardData.push(habitWithStatus);
+    updatedCardData.push({ iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' });
+    
+    setCardData(updatedCardData);
+  };
+
+  // Function to update habit status
+  const updateHabitStatus = (habitTitle: string, newStatus: string) => {
+    const updatedCardData = cardData.map(habit => 
+      habit.title === habitTitle 
+        ? { ...habit, status: newStatus }
+        : habit
+    );
+    setCardData(updatedCardData);
+  };
+
+  // Listen for new habit data from the NewHabit screen
+  useEffect(() => {
+    if (params.newHabit && typeof params.newHabit === 'string') {
+      try {
+        const newHabitData = JSON.parse(params.newHabit);
+        addNewHabit(newHabitData);
+      } catch (error) {
+        console.error('Error parsing new habit data:', error);
+      }
+    }
+  }, [params.newHabit]);
+
+  // Calculate progress based on completed habits
+  const calculateProgress = () => {
+    const habitsWithoutNewHabit = cardData.filter(card => card.title !== 'New Habit');
+    const completedHabits = habitsWithoutNewHabit.filter(card => card.status === 'Done');
+    const totalHabits = habitsWithoutNewHabit.length;
+    
+    if (totalHabits === 0) return { percentage: 0, completed: 0 };
+    
+    const percentage = Math.round((completedHabits.length / totalHabits) * 100);
+    return { percentage, completed: completedHabits.length };
+  };
+
+  const progress = calculateProgress();
 
 const openPanel = () => {
   setPanelOpen(true);
@@ -59,10 +120,10 @@ const closePanel = () => {
         <View style={styles.progressContainer}>
           <View style={styles.progressWrapper}>
             <View style={styles.progressBarBackground}>
-              <View style={[styles.progressBarFill, { width: '60%' }]} />
+              <View style={[styles.progressBarFill, { width: `${progress.percentage}%` }]} />
             </View>
             <View style={styles.circle}>
-              <Text style={styles.circleText}>2</Text>
+              <Text style={styles.circleText}>{progress.completed}</Text>
             </View>
           </View>
         </View>
@@ -76,6 +137,7 @@ const closePanel = () => {
                   title={card.title}
                   status={card.status}
                   color={card.color}
+                  scanMethod={card.scanMethod}
                   id={card.title.toLowerCase().replace(/\s+/g, '-')}
                 />
               </View>

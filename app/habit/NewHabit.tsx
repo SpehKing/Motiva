@@ -18,10 +18,37 @@ export default function CreateHabitScreen() {
   const [frequency, setFrequency] = useState<'day' | 'week'>('day');
   const [habitName, setHabitName] = useState('');
   const [scanningMethod, setScanningMethod] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState('star-outline');
+  const [selectedColor, setSelectedColor] = useState('#3498db');
+
+  // Available icons for habits
+  const availableIcons = [
+    'star-outline', 'heart-outline', 'fitness-outline', 'bicycle-outline',
+    'book-outline', 'musical-notes-outline', 'brush-outline', 'restaurant-outline',
+    'water-outline', 'moon-outline', 'sunny-outline', 'leaf-outline'
+  ];
+
+  // Available colors for habits
+  const availableColors = [
+    '#3498db', '#e74c3c', '#2ecc71', '#f39c12',
+    '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
+  ];
 
   const onDone = () => {
-    // Save habit logic here if needed
-    router.push('/');
+    if (habitName.trim() && scanningMethod.trim()) {
+      const newHabit = {
+        iconName: selectedIcon,
+        title: habitName.trim(),
+        scanMethod: scanningMethod.trim(),
+        color: selectedColor
+      };
+      
+      // Navigate back to main screen with the new habit data
+      router.push({
+        pathname: '/',
+        params: { newHabit: JSON.stringify(newHabit) }
+      });
+    }
   };
 
   const onBack = () => router.back();
@@ -73,7 +100,7 @@ export default function CreateHabitScreen() {
           />
 
           <Text style={styles.title1}>How would you like to scan for completing your habit?</Text>
-          {/* Scanning metod input */}
+          {/* Scanning method input */}
           <TextInput
             style={styles.input2}
             placeholder="Scanning method"
@@ -82,6 +109,39 @@ export default function CreateHabitScreen() {
             multiline
             numberOfLines={4}
           />
+
+          <Text style={styles.title1}>Choose an icon</Text>
+          {/* Icon selection */}
+          <View style={styles.iconGrid}>
+            {availableIcons.map((icon) => (
+              <TouchableOpacity
+                key={icon}
+                style={[
+                  styles.iconOption,
+                  selectedIcon === icon && styles.iconOptionSelected
+                ]}
+                onPress={() => setSelectedIcon(icon)}
+              >
+                <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? '#fff' : '#FFFBF6'} />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.title1}>Choose a color</Text>
+          {/* Color selection */}
+          <View style={styles.colorGrid}>
+            {availableColors.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: color },
+                  selectedColor === color && styles.colorOptionSelected
+                ]}
+                onPress={() => setSelectedColor(color)}
+              />
+            ))}
+          </View>
 
           {/* Done button */}
           <TouchableOpacity
@@ -226,5 +286,41 @@ const styles = StyleSheet.create({
     color: '#FFFBF6',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  iconOption: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#314146',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconOptionSelected: {
+    backgroundColor: '#FFF47B',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  colorOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorOptionSelected: {
+    borderColor: '#FFFBF6',
+    borderWidth: 3,
   },
 });

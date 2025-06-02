@@ -22,7 +22,7 @@ export default function Card({ iconName, title, status, scanMethod, color = '#34
   if (normalizedStatus === 'not done') {
     router.push({
       pathname: '/habit/ActivityCaptureScreen',
-      params: { color },
+      params: { color, scanMethod },
     });
   } else if (normalizedStatus === 'done') {
     router.push({
