@@ -1,4 +1,5 @@
 const { db, initializeDatabase, habits } = require("../db");
+const { deleteHabit } = require("../db/habitOps");
 
 async function runSmokeTest() {
   try {
@@ -19,6 +20,12 @@ async function runSmokeTest() {
 
     if (rows.length > 0) {
       console.log("📋 Last habit:", rows[rows.length - 1]);
+
+      /* delete-test */
+      console.log("🔄 Testing delete functionality...");
+      await deleteHabit(rows[rows.length - 1].id);
+      const rowsAfter = await db.select().from(habits);
+      console.log("Rows after delete:", rowsAfter.length); // expect rows.length - 1
     }
 
     console.log("🎉 Database smoke test completed successfully!");

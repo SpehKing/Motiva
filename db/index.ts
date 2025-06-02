@@ -36,3 +36,4 @@ export const initializeDatabase = async () => {
 
 // Export schema tables for easy access
 export { habits, completions };
+export { deleteHabit } from './habitOps';

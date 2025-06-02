@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, SafeAreaView, ScrollView, Dimensions, TouchableOpacity, Alert, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
+import { deleteHabit } from '../../db/habitOps';
 
 // Sample data - in a real app, this would come from a database or API
 const weeklyData = {
@@ -62,12 +63,32 @@ export default function HabitDetailScreen() {
     });
   };
 
+  const onDelete = () =>
+    Alert.alert(
+      'Delete habit?',
+      'This removes all completions too. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteHabit(Number(id));
+            router.replace('/'); // back to dashboard
+          },
+        },
+      ],
+    );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
+        <Pressable onPress={onDelete} style={styles.deleteButton}>
+          <Ionicons name="trash-outline" size={20} color="#fff" />
+        </Pressable>
         <View style={styles.header}>
           <Ionicons name={habitIcon as any} style={styles.icon}size={45} color={habitColor}/>
           <Text style={styles.title}>{habitTitle}</Text>
@@ -158,6 +179,18 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: '#5D737A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#d32f2f',
     justifyContent: 'center',
     alignItems: 'center',
   },
