@@ -39,17 +39,39 @@ export default function Card({ iconName, title, status, scanMethod, color = '#34
 };
   
   return (
-    <TouchableOpacity 
-      style={[styles.card, { borderColor: color }]} 
+    <TouchableOpacity
+      style={[styles.card,
+        { borderColor: status.trim().toLowerCase() === 'done' ? '#FFFBF6' : color },
+        status.trim().toLowerCase() === 'done' && { backgroundColor: color }
+      ]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName as any} size={45} color={color} />
+        <Ionicons
+          name={iconName as any}
+          size={45}
+          color={status.trim().toLowerCase() === 'done' ? '#FFFBF6' : color}
+        />
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={[styles.status, { color }]}>{status}</Text>
+      <Text
+        style={[
+          styles.title,
+          status.trim().toLowerCase() === 'done' && { color: '#FFFBF6' },
+        ]}
+      >
+        {title}
+      </Text>
+      <Text
+        style={[
+          styles.status,
+          { color: status.trim().toLowerCase() === 'done' ? '#FFFBF6' : color },
+        ]}
+      >
+        {status}
+      </Text>
     </TouchableOpacity>
+
   );
 }
 

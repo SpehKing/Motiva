@@ -23,10 +23,12 @@ export default function CreateHabitScreen() {
 
   // Available icons for habits
   const availableIcons = [
-    'star-outline', 'heart-outline', 'fitness-outline', 'bicycle-outline',
-    'book-outline', 'musical-notes-outline', 'brush-outline', 'restaurant-outline',
-    'water-outline', 'moon-outline', 'sunny-outline', 'leaf-outline'
-  ];
+  'star-outline', 'heart-outline', 'fitness-outline', 'bicycle-outline',
+  'book-outline', 'musical-notes-outline', 'brush-outline', 'restaurant-outline',
+  'water-outline', 'moon-outline', 'sunny-outline', 'leaf-outline',
+  'desktop-outline', 'accessibility-outline',
+];
+
 
   // Available colors for habits
   const availableColors = [
@@ -94,7 +96,7 @@ export default function CreateHabitScreen() {
           {/* Habit name input */}
           <TextInput
             style={styles.input1}
-            placeholder="Habit name"
+            placeholder="Hint: Reading"
             value={habitName}
             onChangeText={setHabitName}
           />
@@ -103,7 +105,7 @@ export default function CreateHabitScreen() {
           {/* Scanning method input */}
           <TextInput
             style={styles.input2}
-            placeholder="Scanning method"
+            placeholder="Hint: Take a picture of a book"
             value={scanningMethod}
             onChangeText={setScanningMethod}
             multiline
@@ -253,7 +255,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 10,
-    fontSize: 24,
+    fontSize: 20,
     marginBottom: 24,
 
   },
@@ -286,6 +288,7 @@ const styles = StyleSheet.create({
     color: '#FFFBF6',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: "center",
   },
   iconGrid: {
     flexDirection: 'row',
