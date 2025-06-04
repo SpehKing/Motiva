@@ -63,7 +63,15 @@ export default function HabitDetailScreen() {
     });
   };
 
-  const onDelete = () =>
+  const onDelete = () => {
+    const habitId = Number(id);
+    
+    // Prevent deletion of the "New Habit" card (id = -1)
+    if (habitId === -1) {
+      Alert.alert('Cannot Delete', 'This is not a real habit that can be deleted.');
+      return;
+    }
+    
     Alert.alert(
       'Delete habit?',
       'This removes all completions too. This cannot be undone.',
@@ -73,12 +81,24 @@ export default function HabitDetailScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await deleteHabit(Number(id));
-            router.replace('/'); // back to dashboard
+            try {
+              console.log('Deleting habit with ID:', habitId);
+              await deleteHabit(habitId);
+              console.log('Habit deleted successfully');
+              // Navigate back with refresh parameter to trigger reload
+              router.push({
+                pathname: '/',
+                params: { refresh: Date.now().toString() }
+              });
+            } catch (error) {
+              console.error('Error deleting habit:', error);
+              Alert.alert('Error', 'Failed to delete habit. Please try again.');
+            }
           },
         },
       ],
     );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

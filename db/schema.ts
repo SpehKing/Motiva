@@ -6,6 +6,7 @@ export const habits = sqliteTable('habits', {
   color:  text('color').notNull(),
   icon:   text('icon').notNull(),
   freq:   text('freq').notNull(),           // "daily" | "weekly"
+  scanMethod: text('scan_method').notNull(), // "qr" | "nfc" | "manual"
 });
 
 export const completions = sqliteTable('completions', {

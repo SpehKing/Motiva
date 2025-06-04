@@ -16,27 +16,22 @@ import Card from '../components/Card';
 import { Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { runDatabaseTest } from '../utils/databaseTest';
-import { initializeDatabase } from '../db';
+import { initializeDatabase, resetDatabase } from '../db';
+import { 
+  getAllHabits, 
+  saveHabit, 
+  updateHabitStatus, 
+  initializeDefaultHabits,
+  type HabitData 
+} from '../db/habitOps';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Define the habit type
-type HabitData = {
-  iconName: string;
-  title: string;
-  status: string;
-  scanMethod: string;
-  color: string;
-};
-
 export default function MainScreen() {
-  const [cardData, setCardData] = useState<HabitData[]>([
-    { iconName: 'walk-outline', title: 'Running', status: 'Done', scanMethod: 'Take a picture of the path', color: '#27ae60' },
-    { iconName: 'trending-up-outline', title: 'Climbing', status: 'Done', scanMethod: 'Take a picture of the climbing wall/climbing gym', color: '#e67e22' },
-    { iconName: 'book-outline', title: 'Reading', status: 'Not Done', scanMethod: 'Take a picture of the book', color: '#2980b9' },
-    { iconName: 'brush-outline', title: 'Cleaning', status: 'Done', scanMethod: 'Take a picture of a clean apartment', color: '#8e44ad' },
-    { iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' },
-  ]);
+  const [cardData, setCardData] = useState<HabitData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [processedNewHabit, setProcessedNewHabit] = useState<string | null>(null);
 
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -46,55 +41,136 @@ export default function MainScreen() {
   const params = useLocalSearchParams();
 
   // Function to add a new habit
-  const addNewHabit = (newHabit: Omit<HabitData, 'status'>) => {
-    const habitWithStatus: HabitData = {
-      ...newHabit,
-      status: 'Not Done'
-    };
-    
-    // Remove the "New Habit" card and add the new habit before it
-    const updatedCardData = cardData.filter(card => card.title !== 'New Habit');
-    updatedCardData.push(habitWithStatus);
-    updatedCardData.push({ iconName: 'add-outline', title: 'New Habit', status: 'No Habit', scanMethod: 'Null', color: '#5D737A' });
-    
-    setCardData(updatedCardData);
+  const addNewHabit = async (newHabit: Omit<HabitData, 'status' | 'id'>) => {
+    try {
+      console.log('Adding new habit:', newHabit.title, 'Database initialized:', isInitialized);
+      
+      // Wait for database to be initialized if it's not ready yet
+      if (!isInitialized) {
+        console.log('Database not ready, waiting for initialization...');
+        // Wait up to 10 seconds for initialization
+        let attempts = 0;
+        const maxAttempts = 100; // 100 * 100ms = 10 seconds
+        
+        while (!isInitialized && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+          if (attempts % 10 === 0) {
+            console.log(`Still waiting for database initialization... attempt ${attempts}`);
+          }
+        }
+        
+        if (!isInitialized) {
+          console.error('Database initialization timeout after 10 seconds');
+          Alert.alert('Error', 'Database is taking too long to initialize. Please restart the app and try again.');
+          return;
+        }
+      }
+      
+      console.log('Database is ready, saving habit...');
+      await saveHabit(newHabit);
+      console.log('Habit saved, reloading habits list...');
+      await loadHabits(); // Reload habits from database
+      console.log('New habit added successfully');
+      Alert.alert('Success', `"${newHabit.title}" habit created successfully!`);
+    } catch (error) {
+      console.error('Error adding new habit:', error);
+      Alert.alert('Error', 'Failed to save new habit. Please try again.');
+    }
   };
 
   // Function to update habit status
-  const updateHabitStatus = (habitTitle: string, newStatus: string) => {
-    const updatedCardData = cardData.map(habit => 
-      habit.title === habitTitle 
-        ? { ...habit, status: newStatus }
-        : habit
-    );
-    setCardData(updatedCardData);
+  const updateHabitStatusLocal = async (habitTitle: string, newStatus: string) => {
+    try {
+      const habit = cardData.find(h => h.title === habitTitle);
+      if (habit && habit.id) {
+        const completed = newStatus === 'Done';
+        await updateHabitStatus(habit.id, completed);
+        await loadHabits(); // Reload habits from database
+      }
+    } catch (error) {
+      console.error('Error updating habit status:', error);
+      Alert.alert('Error', 'Failed to update habit status. Please try again.');
+    }
   };
+
+  // Function to load habits from database
+  const loadHabits = async (skipInitCheck = false) => {
+    try {
+      if (!skipInitCheck && !isInitialized) {
+        console.warn('Database not initialized yet, skipping loadHabits');
+        return;
+      }
+      setIsLoading(true);
+      const habits = await getAllHabits();
+      setCardData(habits);
+    } catch (error) {
+      console.error('Error loading habits:', error);
+      Alert.alert('Error', 'Failed to load habits from database.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Wrapper for button press
+  const handleRefreshHabits = () => loadHabits();
 
   // Listen for new habit data from the NewHabit screen
   useEffect(() => {
-    if (params.newHabit && typeof params.newHabit === 'string') {
-      try {
-        const newHabitData = JSON.parse(params.newHabit);
-        addNewHabit(newHabitData);
-      } catch (error) {
-        console.error('Error parsing new habit data:', error);
+    const processNewHabit = async () => {
+      if (params.newHabit && typeof params.newHabit === 'string' && params.newHabit !== processedNewHabit) {
+        try {
+          console.log('Processing new habit from params:', params.newHabit);
+          const newHabitData = JSON.parse(params.newHabit);
+          setProcessedNewHabit(params.newHabit); // Mark as being processed
+          await addNewHabit(newHabitData);
+        } catch (error) {
+          console.error('Error parsing new habit data:', error);
+          Alert.alert('Error', 'Failed to process new habit data.');
+        }
       }
+    };
+    
+    if (isInitialized) {
+      processNewHabit();
     }
-  }, [params.newHabit]);
+  }, [params.newHabit, isInitialized, processedNewHabit]); // Include all dependencies
+
+  // Listen for refresh requests
+  useEffect(() => {
+    if (params.refresh && isInitialized) {
+      loadHabits();
+    }
+  }, [params.refresh, isInitialized]);
 
   // Initialize database on app startup
   useEffect(() => {
     const setupDatabase = async () => {
       try {
+        console.log('🚀 Starting database setup...');
+        setIsLoading(true);
+        setIsInitialized(false); // Ensure we start with false
+        
         await initializeDatabase();
-        console.log('✅ Database initialized on app startup');
+        console.log('📊 Database initialized, loading default habits...');
+        
+        await initializeDefaultHabits();
+        console.log('🏠 Default habits loaded, setting initialization flag...');
+        
+        setIsInitialized(true); // Set initialized BEFORE loading habits
+        console.log('✅ Database setup complete, loading habits...');
+        
+        await loadHabits(true); // Skip init check for first load
+        console.log('✅ Database initialized and habits loaded on app startup');
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);
+        setIsInitialized(false);
+        Alert.alert('Database Error', 'Failed to initialize database. Please restart the app.');
       }
     };
     
     setupDatabase();
-  }, []);
+  }, []); // Empty dependency array - run only once on mount
 
   // Calculate progress based on completed habits
   const calculateProgress = () => {
@@ -144,6 +220,44 @@ const handleDatabaseTest = async () => {
   }
 };
 
+// Database reset function for development
+const handleDatabaseReset = async () => {
+  try {
+    Alert.alert(
+      'Reset Database',
+      'This will delete all habits and data. Are you sure?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              setIsInitialized(false);
+              await resetDatabase();
+              await initializeDefaultHabits();
+              setIsInitialized(true);
+              await loadHabits(true); // Skip init check for reset load
+              Alert.alert('Success', 'Database reset successfully!');
+            } catch (error) {
+              console.error('Error resetting database:', error);
+              Alert.alert('Error', 'Failed to reset database.');
+              setIsLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  } catch (error) {
+    console.error('Database reset error:', error);
+    Alert.alert('Error', 'Database reset encountered an error.');
+  }
+};
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -161,20 +275,26 @@ const handleDatabaseTest = async () => {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.cardGrid}>
-            {cardData.map((card, index) => (
-              <View key={index} style={styles.cardWrapper}>
-                <Card
-                  iconName={card.iconName}
-                  title={card.title}
-                  status={card.status}
-                  color={card.color}
-                  scanMethod={card.scanMethod}
-                  id={card.title.toLowerCase().replace(/\s+/g, '-')}
-                />
-              </View>
-            ))}
-          </View>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading habits...</Text>
+            </View>
+          ) : (
+            <View style={styles.cardGrid}>
+              {cardData.map((card, index) => (
+                <View key={card.id !== undefined ? `habit-${card.id}` : `card-${index}`} style={styles.cardWrapper}>
+                  <Card
+                    iconName={card.iconName}
+                    title={card.title}
+                    status={card.status}
+                    color={card.color}
+                    scanMethod={card.scanMethod}
+                    id={card.id?.toString() || card.title.toLowerCase().replace(/\s+/g, '-')}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
 
         {/* Dark overlay */}
@@ -195,8 +315,20 @@ const handleDatabaseTest = async () => {
           
           <TouchableOpacity 
             style={styles.panelButton}
+            onPress={handleRefreshHabits}>
+            <Text style={styles.panelButtonText}>Refresh Habits</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.panelButton}
             onPress={handleDatabaseTest}>
             <Text style={styles.panelButtonText}>Test Database</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.panelButton}
+            onPress={handleDatabaseReset}>
+            <Text style={styles.panelButtonText}>Reset Database</Text>
           </TouchableOpacity>
           
           <View style={styles.toggleRow}>
@@ -296,6 +428,17 @@ const styles = StyleSheet.create({
     width: '48%',
     marginBottom: 16,
     backgroundColor: '#314146',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 50,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#FFFBF6',
+    fontWeight: '500',
   },
 
   // Overlay and Panel

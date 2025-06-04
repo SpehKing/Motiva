@@ -16,18 +16,17 @@ export default function Card({ iconName, title, status, scanMethod, color = '#34
   const router = useRouter();
   
   const handlePress = () => {
-  const cardId = title.toLowerCase().replace(/\s+/g, '-');
   const normalizedStatus = status.trim().toLowerCase();
 
   if (normalizedStatus === 'not done') {
     router.push({
       pathname: '/habit/ActivityCaptureScreen',
-      params: { color, scanMethod },
+      params: { color, scanMethod, habitId: id, habitTitle: title },
     });
   } else if (normalizedStatus === 'done') {
     router.push({
       pathname: '/habit/[id]',
-      params: { id: cardId, title, iconName, scanMethod, color },
+      params: { id: id, title, iconName, scanMethod, color }, // Use the real database ID
     });
   } else if (normalizedStatus === 'no habit') {
     router.push({

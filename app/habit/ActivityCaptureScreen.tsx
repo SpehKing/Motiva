@@ -16,6 +16,7 @@ import {
   imageUriToBase64,
   verifyActivity as verifyActivityAI,
 } from '../../utils/aiService';
+import { updateHabitStatus } from '../../db/habitOps';
 
 /**
  * A single-screen flow that:     
@@ -33,7 +34,7 @@ export default function ActivityCaptureScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const {color, scanMethod} = useLocalSearchParams();
+  const {color, scanMethod, habitId, habitTitle} = useLocalSearchParams();
   const router = useRouter();
   const habitColor = color as string;
 
@@ -61,6 +62,17 @@ export default function ActivityCaptureScreen() {
     try {
       console.log('Verifying activity with AI...');
       const result = await verifyActivityAI(photoUri, activityDescription);
+      
+      if (result.verified && habitId) {
+        // Update habit status in database
+        try {
+          await updateHabitStatus(parseInt(habitId as string), true);
+          console.log('Habit marked as completed in database');
+        } catch (dbError) {
+          console.error('Failed to update habit status in database:', dbError);
+        }
+      }
+      
       Alert.alert(
         result.verified ? 'Activity Verified!' : 'Verification Failed',
         `Confidence: ${result.confidence}%\n\n${result.explanation}`,
@@ -68,7 +80,13 @@ export default function ActivityCaptureScreen() {
           {
             text: 'OK',
             onPress: () => {
-              if (result.verified) router.back();
+              if (result.verified) {
+                // Navigate back to main screen with refresh flag
+                router.push({
+                  pathname: '/',
+                  params: { refresh: Date.now().toString() }
+                });
+              }
             },
           },
         ],
