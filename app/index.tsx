@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import { Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { populateDatabase } from '../utils/databaseTest';
 import { initializeDatabase, resetDatabase } from '../db';
 import { 
   getAllHabits, 
@@ -136,9 +135,6 @@ export default function MainScreen() {
     }
   };
 
-  // Wrapper for button press
-  const handleRefreshHabits = () => loadHabits();
-
   // Listen for new habit data from the NewHabit screen
   useEffect(() => {
     const processNewHabit = async () => {
@@ -167,6 +163,31 @@ export default function MainScreen() {
     }
   }, [params.refresh, isInitialized]);
 
+  // Initialize default habits after database is ready, but only if no user habit is being processed
+  useEffect(() => {
+    const initializeDefaults = async () => {
+      if (!isInitialized) return;
+      
+      // If there's a pending new habit, don't initialize defaults yet
+      if (params.newHabit && typeof params.newHabit === 'string' && params.newHabit.trim()) {
+        console.log('🚫 Skipping default habits - user habit is pending');
+        return;
+      }
+      
+      try {
+        console.log('🏠 Initializing default habits if needed...');
+        await initializeDefaultHabits();
+        await loadHabits(true);
+      } catch (error) {
+        console.error('❌ Error initializing default habits:', error);
+      }
+    };
+    
+    // Small delay to ensure any pending new habit params are processed first
+    const timeoutId = setTimeout(initializeDefaults, 100);
+    return () => clearTimeout(timeoutId);
+  }, [isInitialized, params.newHabit]);
+
   // Initialize database on app startup
   useEffect(() => {
     const setupDatabase = async () => {
@@ -176,10 +197,7 @@ export default function MainScreen() {
         setIsInitialized(false); 
         
         await initializeDatabase();
-        console.log('📊 Database initialized, loading default habits...');
-        
-        await initializeDefaultHabits();
-        console.log('🏠 Default habits loaded, setting initialization flag...');
+        console.log('📊 Database initialized successfully');
         
         setIsInitialized(true); 
         console.log('✅ Database setup complete, loading habits...');
@@ -227,22 +245,6 @@ const closePanel = () => {
   }).start(() => {
     setPanelOpen(false);
   });
-};
-
-// Database populate function for development
-const handleDatabasePopulate = async () => {
-  try {
-    const success = await populateDatabase();
-    if (success) {
-      await loadHabits(true); 
-      Alert.alert('Database Populated', 'Database populated with default habits successfully!');
-    } else {
-      Alert.alert('Database Populate', 'Database population failed. Check console for details.');
-    }
-  } catch (error) {
-    console.error('Database populate error:', error);
-    Alert.alert('Database Populate', 'Database populate encountered an error. Check console for details.');
-  }
 };
 
 // Database reset function for development
@@ -477,18 +479,6 @@ const handleDatabaseReset = async () => {
               style={styles.panelButton}
               onPress={() => router.navigate('/habit/HowItWorks')}>
               <Text style={styles.panelButtonText}>How it works</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.panelButton}
-              onPress={handleRefreshHabits}>
-              <Text style={styles.panelButtonText}>Refresh Habits</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.panelButton}
-              onPress={handleDatabasePopulate}>
-              <Text style={styles.panelButtonText}>Populate Database</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 

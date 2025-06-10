@@ -2,19 +2,28 @@ import { db } from './index';
 import { habits, completions } from './schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 
-// Utility function to get current date in UTC+2 timezone
-function getTodayInUTCPlus2(): string {
+// Utility function to get current date in local timezone
+function getTodayLocal(): string {
   const now = new Date();
-  const utcPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000));
-  return utcPlus2.toISOString().split('T')[0];
+  // Use local date by getting year, month, day in user's timezone
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-// Utility function to get a date offset by days in UTC+2 timezone
-function getDateInUTCPlus2(daysOffset: number = 0): string {
+// Utility function to get a date offset by days in local timezone
+function getDateLocal(daysOffset: number = 0): string {
   const now = new Date();
-  const utcPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000));
-  utcPlus2.setDate(utcPlus2.getDate() + daysOffset);
-  return utcPlus2.toISOString().split('T')[0];
+  // Create a new date with the offset
+  const targetDate = new Date(now);
+  targetDate.setDate(targetDate.getDate() + daysOffset);
+  
+  // Get the date components in local timezone
+  const year = targetDate.getFullYear();
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const day = String(targetDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // Type for habit data matching the UI requirements
@@ -44,7 +53,7 @@ export async function getAllHabits(): Promise<HabitData[]> {
     
     const uiHabits: HabitData[] = await Promise.all(
       dbHabits.map(async (habit) => {
-        const today = getTodayInUTCPlus2();
+        const today = getTodayLocal();
         const todayCompletions = await db.select()
           .from(completions)
           .where(and(
@@ -129,7 +138,7 @@ export async function saveHabit(habitData: Omit<HabitData, 'id' | 'status'>): Pr
 // Update habit status (mark as complete/incomplete)
 export async function updateHabitStatus(habitId: number, completed: boolean): Promise<void> {
   try {
-    const today = getTodayInUTCPlus2();
+    const today = getTodayLocal();
     
     if (completed) {
       await db.insert(completions).values({
@@ -190,8 +199,8 @@ export async function initializeDefaultHabits(): Promise<void> {
 // Get weekly completion data for a specific habit
 export async function getWeeklyCompletionData(habitId: number): Promise<number[]> {
   try {
-    const today = getTodayInUTCPlus2();
-    const weekAgo = getDateInUTCPlus2(-6);
+    const today = getTodayLocal();
+    const weekAgo = getDateLocal(-6);
     
     const startDate = weekAgo;
     const endDate = today;
@@ -207,7 +216,7 @@ export async function getWeeklyCompletionData(habitId: number): Promise<number[]
     const weeklyData: number[] = [];
     
     for (let i = 6; i >= 0; i--) {
-      const dateISO = getDateInUTCPlus2(-i); 
+      const dateISO = getDateLocal(-i); 
       
       const completionsForDay = weeklyCompletions.filter(c => c.dateISO === dateISO).length;
       weeklyData.push(completionsForDay);
