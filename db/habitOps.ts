@@ -54,6 +54,7 @@ export async function getAllHabits(): Promise<HabitData[]> {
     const uiHabits: HabitData[] = await Promise.all(
       dbHabits.map(async (habit) => {
         const today = getTodayLocal();
+        console.log('Checking completions for habit:', habit.name, 'on date:', today);
         const todayCompletions = await db.select()
           .from(completions)
           .where(and(
@@ -139,6 +140,7 @@ export async function saveHabit(habitData: Omit<HabitData, 'id' | 'status'>): Pr
 export async function updateHabitStatus(habitId: number, completed: boolean): Promise<void> {
   try {
     const today = getTodayLocal();
+    console.log(today)
     
     if (completed) {
       await db.insert(completions).values({
@@ -196,14 +198,34 @@ export async function initializeDefaultHabits(): Promise<void> {
   }
 }
 
-// Get weekly completion data for a specific habit
+// Get weekly completion data for a specific habit (current week: Monday to Sunday)
 export async function getWeeklyCompletionData(habitId: number): Promise<number[]> {
   try {
-    const today = getTodayLocal();
-    const weekAgo = getDateLocal(-6);
+    const today = new Date();
     
-    const startDate = weekAgo;
-    const endDate = today;
+    // Get the start of this week (Monday)
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days to Monday
+    
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - daysFromMonday);
+    
+    // Get the end of this week (Sunday)
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    // Format dates to ISO strings
+    const formatDate = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const startDate = formatDate(monday);
+    const endDate = formatDate(sunday);
+    
+    console.log(`Getting weekly data for habit ${habitId} from ${startDate} to ${endDate}`);
     
     const weeklyCompletions = await db.select()
       .from(completions)
@@ -215,13 +237,17 @@ export async function getWeeklyCompletionData(habitId: number): Promise<number[]
     
     const weeklyData: number[] = [];
     
-    for (let i = 6; i >= 0; i--) {
-      const dateISO = getDateLocal(-i); 
+    // Generate completion counts for each day of the week (Monday to Sunday)
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(monday);
+      currentDay.setDate(monday.getDate() + i);
+      const dateISO = formatDate(currentDay);
       
       const completionsForDay = weeklyCompletions.filter(c => c.dateISO === dateISO).length;
       weeklyData.push(completionsForDay);
     }
     
+    console.log(`Weekly data for habit ${habitId}:`, weeklyData);
     return weeklyData;
   } catch (error) {
     console.error('Error getting weekly completion data:', error);

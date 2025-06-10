@@ -91,6 +91,20 @@ export default function HabitDetailScreen() {
   const bestDayIndex = habitData.indexOf(bestDay);
   const bestDayName = daysOfWeek[bestDayIndex];
 
+  // Get current day of week for chart highlighting
+  const getCurrentDayIndex = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to Monday=0, Sunday=6
+  };
+
+  const currentDayIndex = getCurrentDayIndex();
+  
+  // Create chart labels with current day highlighted
+  const chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, index) => 
+    index === currentDayIndex ? `${label}*` : label
+  );
+
   // Calculate chart Y-axis configuration
   const maxValue = Math.max(...habitData, 1);
   const chartMaxValue = Math.max(3, maxValue);
@@ -172,7 +186,7 @@ export default function HabitDetailScreen() {
           }
         >
           <View style={styles.statsContainer}>
-            <Text style={styles.sectionTitle}>Weekly Statistics</Text>
+            <Text style={styles.sectionTitle}>This Week's Statistics</Text>
             
             {isLoading ? (
               <View style={styles.loadingContainer}>
@@ -198,10 +212,11 @@ export default function HabitDetailScreen() {
                 </View>
                 
                 <View style={styles.chartContainer}>
-                  <Text style={styles.chartTitle}>Daily Completions</Text>
+                  <Text style={styles.chartTitle}>Daily Completions (Current Week)</Text>
+                  <Text style={styles.chartSubtitle}>* indicates today</Text>
                   <LineChart
                     data={{
-                      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                      labels: chartLabels,
                       datasets: [
                         {
                           data: chartData.length === 0 ? [0] : chartData,
@@ -359,6 +374,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
     color: '#FFFBF6',
+  },
+  chartSubtitle: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginBottom: 8,
+    textAlign: 'center',
+    color: '#FFFBF6',
+    opacity: 0.8,
   },
   chart: {
     marginVertical: 8,
