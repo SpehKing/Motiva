@@ -1,20 +1,9 @@
-import React from 'react';
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, Dimensions, TouchableOpacity, Alert, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, SafeAreaView, ScrollView, Dimensions, TouchableOpacity, Alert, Pressable, RefreshControl } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
-import { deleteHabit } from '../../db/habitOps';
-
-// Sample data - in a real app, this would come from a database or API
-const weeklyData = {
-  'Running': [1, 2, 3, 2, 4, 3, 2],
-  'Climbing': [0, 1, 0, 2, 1, 1, 0],
-  'Reading': [3, 4, 3, 5, 4, 4, 5],
-  'Cleaning': [2, 1, 2, 3, 2, 2, 1],
-  'Meditation': [1, 2, 1, 2, 3, 2, 3],
-  'Healthy Eating': [4, 3, 4, 3, 5, 4, 4],
-};
-
+import { deleteHabit, getWeeklyCompletionData } from '../../db/habitOps';
 
 const chartConfig = {
   backgroundColor: '#FFFBF6',
@@ -29,7 +18,8 @@ const chartConfig = {
   propsForDots: {
     r: '6',
     strokeWidth: '2',
-  }
+  },
+  segments: 3, // Show only 3 segments on Y-axis
 };
 
 export default function HabitDetailScreen() {
@@ -39,9 +29,59 @@ export default function HabitDetailScreen() {
   const habitColor = color as string;
   const habitIcon = iconName as string;
   const habitScanMethod = scanMethod as string;
+  const habitId = Number(id);
   
-  // Get data for this specific habit (or use empty array if not found)
-  const habitData = weeklyData[habitTitle as keyof typeof weeklyData] || [0, 0, 0, 0, 0, 0, 0];
+  // State for weekly completion data
+  const [habitData, setHabitData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to fetch weekly data
+  const fetchWeeklyData = async () => {
+    if (habitId && habitId !== -1) { // Don't fetch for "New Habit" card
+      try {
+        setIsLoading(true);
+        const weeklyCompletions = await getWeeklyCompletionData(habitId);
+        setHabitData(weeklyCompletions);
+      } catch (error) {
+        console.error('Error fetching weekly data:', error);
+        // Keep default empty data on error
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (habitId && habitId !== -1) {
+        const weeklyCompletions = await getWeeklyCompletionData(habitId);
+        setHabitData(weeklyCompletions);
+      }
+    } catch (error) {
+      console.error('Error refreshing weekly data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Fetch weekly completion data when component mounts
+  useEffect(() => {
+    fetchWeeklyData();
+  }, [habitId]);
+
+  // Refresh data when screen comes back into focus (e.g., returning from ActivityCaptureScreen)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (habitId && habitId !== -1) {
+        fetchWeeklyData();
+      }
+    }, [habitId])
+  );
   
   // Calculate completion stats
   const totalCompletions = habitData.reduce((sum, day) => sum + day, 0);
@@ -53,19 +93,31 @@ export default function HabitDetailScreen() {
   const bestDayIndex = habitData.indexOf(bestDay);
   const bestDayName = daysOfWeek[bestDayIndex];
 
+  // Calculate chart Y-axis configuration
+  const maxValue = Math.max(...habitData, 1); // Ensure at least 1
+  const chartMaxValue = Math.max(3, maxValue); // Minimum of 3, or the actual max if higher
+  
+  // Prepare chart data for better scaling
+  const chartData = [...habitData];
+  
+  // Create dynamic chart config based on data
+  const dynamicChartConfig = {
+    ...chartConfig,
+    segments: 3, // Always use 3 segments for cleaner display
+    yAxisInterval: Math.ceil(chartMaxValue / 3), // Dynamic interval based on max value
+  };
+
   const screenWidth = Dimensions.get('window').width - 32; // Full width minus padding
   
   const handlePress = () => {
     // Convert title to a simple string id for the route
     router.push({
       pathname: '/habit/ActivityCaptureScreen',
-      params: {color, scanMethod: habitScanMethod }
+      params: { color, scanMethod: habitScanMethod, habitId: habitId.toString(), habitTitle }
     });
   };
 
   const onDelete = () => {
-    const habitId = Number(id);
-    
     // Prevent deletion of the "New Habit" card (id = -1)
     if (habitId === -1) {
       Alert.alert('Cannot Delete', 'This is not a real habit that can be deleted.');
@@ -110,58 +162,86 @@ export default function HabitDetailScreen() {
           <Ionicons name="trash-outline" size={20} color="#fff" />
         </Pressable>
         <View style={styles.header}>
-          <Ionicons name={habitIcon as any} style={styles.icon}size={45} color={habitColor}/>
+          <Ionicons name={habitIcon as any} style={styles.icon}size={35} color={habitColor}/>
           <Text style={styles.title}>{habitTitle}</Text>
         </View>
         
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#FFFBF6"
+            />
+          }
+        >
           <View style={styles.statsContainer}>
             <Text style={styles.sectionTitle}>Weekly Statistics</Text>
             
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>{totalCompletions}</Text>
-                <Text style={styles.statLabel}>Total Completions</Text>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading statistics...</Text>
               </View>
-              
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>{avgCompletions.toFixed(1)}</Text>
-                <Text style={styles.statLabel}>Daily Average</Text>
-              </View>
-              
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>{bestDayName}</Text>
-                <Text style={styles.statLabel}>Best Day</Text>
-              </View>
-            </View>
-            
-            <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>Daily Completions</Text>
-              <LineChart
-                data={{
-                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                  datasets: [
-                    {
-                      data: habitData,
-                      color: (opacity = 1) => habitColor || `rgba(52, 152, 219, ${opacity})`,
-                      strokeWidth: 2
-                    }
-                  ]
-                }}
-                width={screenWidth-50}
-                height={220}
-                chartConfig={chartConfig}
-                bezier
-                style={styles.chart}
+            ) : (
+              <>
+                <View style={styles.statsRow}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{totalCompletions}</Text>
+                    <Text style={styles.statLabel}>Total Completions</Text>
+                  </View>
+                  
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{avgCompletions.toFixed(1)}</Text>
+                    <Text style={styles.statLabel}>Daily Average</Text>
+                  </View>
+                  
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{bestDayName}</Text>
+                    <Text style={styles.statLabel}>Best Day</Text>
+                  </View>
+                </View>
                 
-              />
-            </View>
+                <View style={styles.chartContainer}>
+                  <Text style={styles.chartTitle}>Daily Completions</Text>
+                  <LineChart
+                    data={{
+                      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                      datasets: [
+                        {
+                          data: chartData.length === 0 ? [0] : chartData,
+                          color: (opacity = 1) => habitColor || `rgba(52, 152, 219, ${opacity})`,
+                          strokeWidth: 2
+                        }
+                      ]
+                    }}
+                    width={screenWidth-50}
+                    height={220}
+                    chartConfig={dynamicChartConfig}
+                    bezier
+                    style={styles.chart}
+                    yAxisInterval={dynamicChartConfig.yAxisInterval}
+                    fromZero={true}
+                    segments={3}
+                    yAxisSuffix=""
+                    yLabelsOffset={10}
+                    withVerticalLabels={true}
+                    withHorizontalLabels={true}
+                    withDots={true}
+                    withShadow={false}
+                    withScrollableDot={false}
+                    getDotColor={(dataPoint, dataPointIndex) => habitColor || '#3498db'}
+                    formatYLabel={(value) => Math.round(Number(value)).toString()}
+                  />
+                </View>
+              </>
+            )}
             
             <View style={styles.tipsContainer}>
               <Text style={styles.tipsTitle}>Tips to Improve</Text>
               <Text style={styles.tipText}>• Set a specific time each day for this habit</Text>
-              <Text style={styles.tipText}>• Track your progress daily in the app</Text>
-              <Text style={styles.tipText}>• Share your goals with friends for accountability</Text>
+              {/* <Text style={styles.tipText}>• Track your progress daily in the app</Text>
+              <Text style={styles.tipText}>• Share your goals with friends for accountability</Text> */}
             </View>
             
             <TouchableOpacity 
@@ -171,7 +251,7 @@ export default function HabitDetailScreen() {
               activeOpacity={0.8}
               
             >
-              <Text style={styles.completeButtonText}>Complete for Today</Text>
+              <Text style={styles.completeButtonText}>Complete</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -192,7 +272,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: 18,
     left: 20,
     zIndex: 10,
     width: 50,
@@ -204,7 +284,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     position: 'absolute',
-    top: 50,
+    top: 18,
     right: 20,
     zIndex: 10,
     width: 50,
@@ -215,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    paddingTop: 32,
+    paddingTop: 8,
     flexDirection: 'row',
   },
   icon: {
@@ -322,5 +402,15 @@ const styles = StyleSheet.create({
     color: '#FFFBF6',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#FFFBF6',
+    fontSize: 16,
+    fontStyle: 'italic',
   },
 });

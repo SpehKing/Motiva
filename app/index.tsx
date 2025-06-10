@@ -15,13 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import { Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { runDatabaseTest } from '../utils/databaseTest';
+import { populateDatabase } from '../utils/databaseTest';
 import { initializeDatabase, resetDatabase } from '../db';
 import { 
   getAllHabits, 
   saveHabit, 
   updateHabitStatus, 
   initializeDefaultHabits,
+  getHabitCount,
   type HabitData 
 } from '../db/habitOps';
 
@@ -35,8 +36,8 @@ export default function MainScreen() {
 
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const PANEL_HEIGHT = 250;
-  const slideAnim = useRef(new Animated.Value(-PANEL_HEIGHT)).current;
+  const PANEL_HEIGHT = 350;
+  const slideAnim = useRef(new Animated.Value(-PANEL_HEIGHT - 50)).current;
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -67,6 +68,17 @@ export default function MainScreen() {
         }
       }
       
+      // Check habit count before saving
+      const currentCount = await getHabitCount();
+      if (currentCount >= 6) {
+        Alert.alert(
+          'Maximum Habits Reached', 
+          'You can only have up to 6 habits. Please delete an existing habit to add a new one.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
       console.log('Database is ready, saving habit...');
       await saveHabit(newHabit);
       console.log('Habit saved, reloading habits list...');
@@ -75,7 +87,15 @@ export default function MainScreen() {
       Alert.alert('Success', `"${newHabit.title}" habit created successfully!`);
     } catch (error) {
       console.error('Error adding new habit:', error);
-      Alert.alert('Error', 'Failed to save new habit. Please try again.');
+      if (error instanceof Error && error.message.includes('Maximum number of habits')) {
+        Alert.alert(
+          'Maximum Habits Reached', 
+          'You can only have up to 6 habits. Please delete an existing habit to add a new one.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to save new habit. Please try again.');
+      }
     }
   };
 
@@ -197,7 +217,7 @@ const openPanel = () => {
 
 const closePanel = () => {
   Animated.timing(slideAnim, {
-    toValue: -PANEL_HEIGHT,
+    toValue: -PANEL_HEIGHT - 50,
     duration: 300,
     useNativeDriver: false,
   }).start(() => {
@@ -205,18 +225,19 @@ const closePanel = () => {
   });
 };
 
-// Database test function
-const handleDatabaseTest = async () => {
+// Database populate function for development
+const handleDatabasePopulate = async () => {
   try {
-    const success = await runDatabaseTest();
+    const success = await populateDatabase();
     if (success) {
-      Alert.alert('Database Test', 'Database test completed successfully! Check console for details.');
+      await loadHabits(true); // Reload habits after populating
+      Alert.alert('Database Populated', 'Database populated with default habits successfully!');
     } else {
-      Alert.alert('Database Test', 'Database test failed. Check console for details.');
+      Alert.alert('Database Populate', 'Database population failed. Check console for details.');
     }
   } catch (error) {
-    console.error('Database test error:', error);
-    Alert.alert('Database Test', 'Database test encountered an error. Check console for details.');
+    console.error('Database populate error:', error);
+    Alert.alert('Database Populate', 'Database populate encountered an error. Check console for details.');
   }
 };
 
@@ -239,10 +260,10 @@ const handleDatabaseReset = async () => {
               setIsLoading(true);
               setIsInitialized(false);
               await resetDatabase();
-              await initializeDefaultHabits();
+              // Don't automatically add default habits after reset - let user choose to populate manually
               setIsInitialized(true);
               await loadHabits(true); // Skip init check for reset load
-              Alert.alert('Success', 'Database reset successfully!');
+              Alert.alert('Success', 'Database reset successfully! All habits have been removed.');
             } catch (error) {
               console.error('Error resetting database:', error);
               Alert.alert('Error', 'Failed to reset database.');
@@ -321,8 +342,8 @@ const handleDatabaseReset = async () => {
           
           <TouchableOpacity 
             style={styles.panelButton}
-            onPress={handleDatabaseTest}>
-            <Text style={styles.panelButtonText}>Test Database</Text>
+            onPress={handleDatabasePopulate}>
+            <Text style={styles.panelButtonText}>Populate Database</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -455,7 +476,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 250,
+    height: 350,
     backgroundColor: '#5D737A',
     zIndex: 10,
     elevation: 6,

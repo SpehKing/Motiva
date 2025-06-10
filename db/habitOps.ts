@@ -1,6 +1,24 @@
 import { db } from './index';
 import { habits, completions } from './schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte, lte } from 'drizzle-orm';
+
+// Utility function to get current date in UTC+2 timezone
+function getTodayInUTCPlus2(): string {
+  const now = new Date();
+  // Add 2 hours to get UTC+2
+  const utcPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+  return utcPlus2.toISOString().split('T')[0];
+}
+
+// Utility function to get a date offset by days in UTC+2 timezone
+function getDateInUTCPlus2(daysOffset: number = 0): string {
+  const now = new Date();
+  // Add 2 hours to get UTC+2
+  const utcPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+  // Apply the day offset
+  utcPlus2.setDate(utcPlus2.getDate() + daysOffset);
+  return utcPlus2.toISOString().split('T')[0];
+}
 
 // Type for habit data matching the UI requirements
 export type HabitData = {
@@ -31,7 +49,7 @@ export async function getAllHabits(): Promise<HabitData[]> {
     const uiHabits: HabitData[] = await Promise.all(
       dbHabits.map(async (habit) => {
         // Check if habit is completed today
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayInUTCPlus2();
         const todayCompletions = await db.select()
           .from(completions)
           .where(and(
@@ -50,19 +68,22 @@ export async function getAllHabits(): Promise<HabitData[]> {
       })
     );
     
-    // Add the "New Habit" card at the end
-    uiHabits.push({
-      id: -1, // Special ID that won't conflict with database auto-increment IDs
-      iconName: 'add-outline',
-      title: 'New Habit',
-      status: 'No Habit',
-      scanMethod: 'Null',
-      color: '#5D737A'
-    });
+    // Only add the "New Habit" card if there are fewer than 6 habits
+    if (uiHabits.length < 6) {
+      uiHabits.push({
+        id: -1, // Special ID that won't conflict with database auto-increment IDs
+        iconName: 'add-outline',
+        title: 'New Habit',
+        status: 'No Habit',
+        scanMethod: 'Null',
+        color: '#5D737A'
+      });
+    }
     
     return uiHabits;
   } catch (error) {
     console.error('Error getting habits from database:', error);
+    // Only show "New Habit" card in error state if we can't verify the count
     return [
       {
         id: -1, // Special ID that won't conflict with database auto-increment IDs
@@ -76,9 +97,26 @@ export async function getAllHabits(): Promise<HabitData[]> {
   }
 }
 
+// Get the count of habits in the database
+export async function getHabitCount(): Promise<number> {
+  try {
+    const dbHabits = await db.select().from(habits);
+    return dbHabits.length;
+  } catch (error) {
+    console.error('Error getting habit count from database:', error);
+    return 0;
+  }
+}
+
 // Save a new habit to database
 export async function saveHabit(habitData: Omit<HabitData, 'id' | 'status'>): Promise<number> {
   try {
+    // Check if we already have 6 habits
+    const currentCount = await getHabitCount();
+    if (currentCount >= 6) {
+      throw new Error('Maximum number of habits (6) already reached');
+    }
+
     const result = await db.insert(habits).values({
       name: habitData.title,
       color: habitData.color,
@@ -98,7 +136,7 @@ export async function saveHabit(habitData: Omit<HabitData, 'id' | 'status'>): Pr
 // Update habit status (mark as complete/incomplete)
 export async function updateHabitStatus(habitId: number, completed: boolean): Promise<void> {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayInUTCPlus2();
     
     if (completed) {
       // Add completion record for today
@@ -155,6 +193,45 @@ export async function initializeDefaultHabits(): Promise<void> {
   } catch (error) {
     console.error('❌ Error initializing default habits:', error);
     throw error;
+  }
+}
+
+// Get weekly completion data for a specific habit
+export async function getWeeklyCompletionData(habitId: number): Promise<number[]> {
+  try {
+    // Get the last 7 days including today in UTC+2
+    const today = getTodayInUTCPlus2();
+    const weekAgo = getDateInUTCPlus2(-6); // 6 days ago + today = 7 days
+    
+    // Use the UTC+2 dates directly
+    const startDate = weekAgo;
+    const endDate = today;
+    
+    // Get all completions for this habit in the last 7 days
+    const weeklyCompletions = await db.select()
+      .from(completions)
+      .where(and(
+        eq(completions.habitId, habitId),
+        gte(completions.dateISO, startDate),
+        lte(completions.dateISO, endDate)
+      ));
+    
+    // Create an array for the last 7 days with completion counts
+    const weeklyData: number[] = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const dateISO = getDateInUTCPlus2(-i); // Get date i days ago in UTC+2
+      
+      // Count completions for this date (should be 0 or 1 for daily habits)
+      const completionsForDay = weeklyCompletions.filter(c => c.dateISO === dateISO).length;
+      weeklyData.push(completionsForDay);
+    }
+    
+    return weeklyData;
+  } catch (error) {
+    console.error('Error getting weekly completion data:', error);
+    // Return empty data on error
+    return [0, 0, 0, 0, 0, 0, 0];
   }
 }
 

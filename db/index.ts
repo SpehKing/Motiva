@@ -63,49 +63,22 @@ const createTables = async () => {
   )`);
 };
 
-// For development: Reset database by dropping and recreating tables
+// For development: Reset database by removing all habits and completions
 export const resetDatabase = async () => {
   try {
     console.log('🔄 Resetting database...');
     
-    // Alternative approach: Delete all data instead of dropping tables
-    try {
-      // Delete all completions first (child table)
-      await db.run(sql`DELETE FROM completions`);
-      console.log('🗑️ Cleared completions table');
-      
-      // Delete all habits (parent table)
-      await db.run(sql`DELETE FROM habits`);
-      console.log('🗑️ Cleared habits table');
-      
-      console.log('✅ Database reset successfully');
-    } catch (deleteError) {
-      // If delete approach fails, try the drop table approach
-      console.log('Delete approach failed, trying drop tables...');
-      
-      // Disable foreign key constraints temporarily
-      await db.run(sql`PRAGMA foreign_keys = OFF`);
-      
-      // Drop existing tables (order matters due to foreign keys)
-      await db.run(sql`DROP TABLE IF EXISTS completions`);
-      await db.run(sql`DROP TABLE IF EXISTS habits`);
-      console.log('🗑️ Dropped existing tables');
-      
-      // Re-enable foreign key constraints
-      await db.run(sql`PRAGMA foreign_keys = ON`);
-      
-      // Recreate tables
-      await createTables();
-      console.log('✅ Tables recreated successfully');
-    }
+    // Delete all completions first (child table)
+    await db.run(sql`DELETE FROM completions`);
+    console.log('🗑️ Cleared all completions');
+    
+    // Delete all habits (parent table)
+    await db.run(sql`DELETE FROM habits`);
+    console.log('🗑️ Cleared all habits');
+    
+    console.log('✅ Database reset successfully - all habits and completions removed');
   } catch (error) {
     console.error('❌ Error resetting database:', error);
-    // Make sure to re-enable foreign keys even if there's an error
-    try {
-      await db.run(sql`PRAGMA foreign_keys = ON`);
-    } catch (pragmaError) {
-      console.error('Failed to re-enable foreign keys:', pragmaError);
-    }
     throw error;
   }
 };

@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { getHabitCount } from '../db/habitOps';
 
 type CardProps = {
   iconName: any; // Using 'any' to bypass strict type checking for now
@@ -15,7 +16,7 @@ type CardProps = {
 export default function Card({ iconName, title, status, scanMethod, color = '#3498db', id = '0' }: CardProps) {
   const router = useRouter();
   
-  const handlePress = () => {
+  const handlePress = async () => {
   const normalizedStatus = status.trim().toLowerCase();
 
   if (normalizedStatus === 'not done') {
@@ -29,9 +30,25 @@ export default function Card({ iconName, title, status, scanMethod, color = '#34
       params: { id: id, title, iconName, scanMethod, color }, // Use the real database ID
     });
   } else if (normalizedStatus === 'no habit') {
-    router.push({
-      pathname: '/habit/NewHabit',
-    });
+    // Check habit count before allowing navigation to NewHabit
+    try {
+      const currentCount = await getHabitCount();
+      if (currentCount >= 6) {
+        Alert.alert(
+          'Maximum Habits Reached',
+          'You can only have up to 6 habits. Please delete an existing habit to add a new one.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      router.push({
+        pathname: '/habit/NewHabit',
+      });
+    } catch (error) {
+      console.error('Error checking habit count:', error);
+      Alert.alert('Error', 'Unable to check habit count. Please try again.');
+    }
   } else {
     console.warn('Unrecognized status:', status);
   }

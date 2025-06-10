@@ -11,7 +11,7 @@ export default function HowItWorksScreen() {
   {
     id: 1,
     title: 'Step 1',
-    text: 'Create a new habit.',
+    text: 'Create a new habit (up to 6 habits).',
     images: [require('../../assets/images/habit-no.png')],
   },
   {

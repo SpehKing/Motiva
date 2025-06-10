@@ -21,6 +21,7 @@ module.exports = {
       supportsTablet: true,
     },
     android: {
+      package: "com.gasperazinovic.motiva", // ✅ Required field added
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff",
@@ -32,6 +33,9 @@ module.exports = {
     },
     extra: {
       openaiApiKey: process.env.OPENAI_API_KEY,
+      eas: {
+        projectId: "e17a8abc-60f3-4235-b22c-5845cb153e11",
+      },
     },
   },
 };
