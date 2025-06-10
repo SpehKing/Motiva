@@ -2,6 +2,10 @@
 
 Motiva is a React Native habit tracking application built with Expo Router that helps users create, track, and maintain healthy habits through AI-powered activity verification.
 
+## Download the apk
+
+https://unilj-my.sharepoint.com/:u:/g/personal/ga58402_student_uni-lj_si/EUexJN2QxBhNkWPn7H8bDSYBnL3k2tP9lq_5QFsabhYCng?e=WQDp4i
+
 ## Features
 
 - 📱 Cross-platform mobile app (iOS, Android, Web)
