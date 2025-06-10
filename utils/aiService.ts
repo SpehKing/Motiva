@@ -1,23 +1,29 @@
 import { Platform } from 'react-native';
 import { encode as btoa } from 'base-64';
 import OpenAI from 'openai';
-import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
+import { AppStorage } from './storage';
 
 /* -------------------------------------------------------------------------
- * Environment‑aware OpenAI client (never commit secrets!)
+ * OpenAI client using stored API key
  * -----------------------------------------------------------------------*/
-const OPENAI_API_KEY =
-  (Constants?.expoConfig?.extra as { openaiApiKey?: string })?.openaiApiKey ??
-  process.env.OPENAI_API_KEY;
+let openai: OpenAI | null = null;
 
-if (!OPENAI_API_KEY) {
-  console.warn(
-    '[aiServiceUtils] Missing OpenAI key – set one via app.config.js extra or env vars',
-  );
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!openai) {
+    const apiKey = await AppStorage.getApiKey();
+    if (!apiKey) {
+      throw new Error('OpenAI API key not found. Please set your API key in the app settings.');
+    }
+    openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+  }
+  return openai;
 }
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true });
+// Reset OpenAI client when API key changes
+export function resetOpenAIClient(): void {
+  openai = null;
+}
 
 /* -------------------------------------------------------------------------
  * File helpers
@@ -49,7 +55,8 @@ export async function verifyActivity(
     throw new Error('Failed to process image');
   }
 
-  const completion = await openai.chat.completions.create({
+  const openaiClient = await getOpenAIClient();
+  const completion = await openaiClient.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 120,
     messages: [

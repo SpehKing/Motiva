@@ -91,9 +91,23 @@ export default function ActivityCaptureScreen() {
       );
     } catch (err) {
       console.error('verifyActivity failed', err);
+      const errorMessage = err instanceof Error && err.message.includes('API key not found') 
+        ? 'OpenAI API key not configured. Please set your API key in the app settings to use AI verification.'
+        : 'There was an error verifying your activity. Please try again.';
+      
       Alert.alert(
         'Verification Error',
-        'There was an error verifying your activity. Please try again.',
+        errorMessage,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (errorMessage.includes('API key not configured')) {
+                router.push('/'); // Navigate back to main screen where settings can be accessed
+              }
+            },
+          },
+        ],
       );
     } finally {
       setIsVerifying(false);

@@ -10,6 +10,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Alert,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
@@ -25,6 +26,8 @@ import {
   getHabitCount,
   type HabitData 
 } from '../db/habitOps';
+import { AppStorage } from '../utils/storage';
+import { resetOpenAIClient } from '../utils/aiService';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -36,8 +39,11 @@ export default function MainScreen() {
 
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const PANEL_HEIGHT = 350;
-  const slideAnim = useRef(new Animated.Value(-PANEL_HEIGHT - 50)).current;
+  const [apiKey, setApiKey] = useState('');
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -215,7 +221,7 @@ const openPanel = () => {
 
 const closePanel = () => {
   Animated.timing(slideAnim, {
-    toValue: -PANEL_HEIGHT - 50,
+    toValue: SCREEN_HEIGHT,
     duration: 300,
     useNativeDriver: false,
   }).start(() => {
@@ -276,6 +282,87 @@ const handleDatabaseReset = async () => {
   }
 };
 
+  // Load API key on component mount
+  useEffect(() => {
+    const loadApiKey = async () => {
+      try {
+        const storedApiKey = await AppStorage.getApiKey();
+        const hasKey = await AppStorage.hasApiKey();
+        setHasApiKey(hasKey);
+        if (storedApiKey) {
+          setApiKey(storedApiKey);
+        }
+      } catch (error) {
+        console.error('Error loading API key:', error);
+      }
+    };
+    loadApiKey();
+  }, []);
+
+  // Function to save API key
+  const handleSaveApiKey = async () => {
+    try {
+      if (!apiKey.trim()) {
+        Alert.alert('Error', 'Please enter a valid API key');
+        return;
+      }
+      
+      if (!AppStorage.validateApiKey(apiKey.trim())) {
+        Alert.alert(
+          'Invalid API Key', 
+          'Please enter a valid OpenAI API key. It should start with "sk-" and be at least 20 characters long.'
+        );
+        return;
+      }
+      
+      await AppStorage.saveApiKey(apiKey.trim());
+      resetOpenAIClient(); // Reset the OpenAI client to use the new key
+      setHasApiKey(true);
+      setShowApiKeyInput(false);
+      Alert.alert('Success', 'OpenAI API key saved successfully!');
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      Alert.alert('Error', 'Failed to save API key. Please try again.');
+    }
+  };
+
+  // Function to remove API key
+  const handleRemoveApiKey = () => {
+    Alert.alert(
+      'Remove API Key',
+      'Are you sure you want to remove the OpenAI API key? AI verification will not work without it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AppStorage.removeApiKey();
+              resetOpenAIClient();
+              setApiKey('');
+              setHasApiKey(false);
+              setShowApiKeyInput(false);
+              Alert.alert('Success', 'API key removed successfully');
+            } catch (error) {
+              console.error('Error removing API key:', error);
+              Alert.alert('Error', 'Failed to remove API key');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Function to toggle API key input visibility
+  const handleApiKeyToggle = () => {
+    if (hasApiKey) {
+      handleRemoveApiKey();
+    } else {
+      setShowApiKeyInput(!showApiKeyInput);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -323,41 +410,103 @@ const handleDatabaseReset = async () => {
         )}
 
         {/* Sliding Panel */}
-        <Animated.View style={[styles.sidePanel, { bottom: slideAnim }]}>
-          <Text style={styles.panelTitle}>Settings</Text>
-          <TouchableOpacity 
-            style={styles.panelButton}
-            onPress={() => router.navigate('/habit/HowItWorks')}>
-            <Text style={styles.panelButtonText}>How it works</Text>
+        <Animated.View style={[styles.sidePanel, { transform: [{ translateY: slideAnim }] }]}>
+          {/* Close button */}
+          <TouchableOpacity style={styles.closeButton} onPress={closePanel}>
+            <Ionicons name="close" size={24} color="#FFFBF6" />
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={styles.panelButton}
-            onPress={handleRefreshHabits}>
-            <Text style={styles.panelButtonText}>Refresh Habits</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.panelButton}
-            onPress={handleDatabasePopulate}>
-            <Text style={styles.panelButtonText}>Populate Database</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.panelButton}
-            onPress={handleDatabaseReset}>
-            <Text style={styles.panelButtonText}>Reset Database</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Enable Notifications</Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              thumbColor={notificationsEnabled ? '#314146' : '#f4f3f4'}
-              trackColor={{ false: '#ccc', true: '#FFF47B' }}
-            />
-          </View>
+          <ScrollView style={styles.panelScrollView} showsVerticalScrollIndicator={false}>
+            <Text style={styles.panelTitle}>Settings</Text>
+            
+            {/* OpenAI API Key Section */}
+            <View style={styles.apiKeySection}>
+              <View style={styles.apiKeyHeader}>
+                <Text style={styles.apiKeyTitle}>OpenAI API Key</Text>
+                <Text style={styles.apiKeyStatus}>
+                  {hasApiKey ? '✅ Configured' : '❌ Not Set'}
+                </Text>
+              </View>
+              
+              <TouchableOpacity
+                style={[styles.panelButton, { backgroundColor: hasApiKey ? '#e74c3c' : '#3498db' }]}
+                onPress={handleApiKeyToggle}
+              >
+                <Text style={styles.panelButtonText}>
+                  {hasApiKey ? 'Remove API Key' : 'Set API Key'}
+                </Text>
+              </TouchableOpacity>
+              
+              {showApiKeyInput && (
+                <View style={styles.apiKeyInputContainer}>
+                  <Text style={styles.apiKeyHelper}>
+                    Enter your OpenAI API key (starts with "sk-"). You can get one from the OpenAI website.
+                  </Text>
+                  <TextInput
+                    style={styles.apiKeyInput}
+                    placeholder="sk-..."
+                    placeholderTextColor="#888"
+                    value={apiKey}
+                    onChangeText={setApiKey}
+                    secureTextEntry={true}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <View style={styles.apiKeyButtonRow}>
+                    <TouchableOpacity
+                      style={[styles.apiKeyButton, styles.cancelButton]}
+                      onPress={() => {
+                        setShowApiKeyInput(false);
+                        setApiKey('');
+                      }}
+                    >
+                      <Text style={styles.apiKeyButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.apiKeyButton, styles.saveButton]}
+                      onPress={handleSaveApiKey}
+                    >
+                      <Text style={styles.apiKeyButtonText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.panelButton}
+              onPress={() => router.navigate('/habit/HowItWorks')}>
+              <Text style={styles.panelButtonText}>How it works</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.panelButton}
+              onPress={handleRefreshHabits}>
+              <Text style={styles.panelButtonText}>Refresh Habits</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.panelButton}
+              onPress={handleDatabasePopulate}>
+              <Text style={styles.panelButtonText}>Populate Database</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.panelButton}
+              onPress={handleDatabaseReset}>
+              <Text style={styles.panelButtonText}>Reset Database</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Enable Notifications</Text>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                thumbColor={notificationsEnabled ? '#314146' : '#f4f3f4'}
+                trackColor={{ false: '#ccc', true: '#FFF47B' }}
+              />
+            </View>
+          </ScrollView>
         </Animated.View>
 
         {/* Settings button */}
@@ -471,15 +620,32 @@ const styles = StyleSheet.create({
   },
   sidePanel: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    height: 350,
+    bottom: 0,
     backgroundColor: '#5D737A',
     zIndex: 10,
     elevation: 6,
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    paddingTop: 60, // Add top padding for status bar
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  panelScrollView: {
+    flex: 1,
+    paddingTop: 20,
   },
   panelTitle: {
     fontSize: 22,
@@ -515,5 +681,70 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     fontWeight: 'bold',
     color: '#314146',
+  },
+  
+  // API Key styles
+  apiKeySection: {
+    marginBottom: 16,
+    backgroundColor: '#FFFBF6',
+    borderRadius: 10,
+    padding: 12,
+  },
+  apiKeyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  apiKeyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#314146',
+  },
+  apiKeyStatus: {
+    fontSize: 12,
+    color: '#666',
+  },
+  apiKeyInputContainer: {
+    marginTop: 12,
+  },
+  apiKeyHelper: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 16,
+  },
+  apiKeyInput: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#314146',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 12,
+  },
+  apiKeyButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  apiKeyButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginHorizontal: 4,
+  },
+  cancelButton: {
+    backgroundColor: '#95a5a6',
+  },
+  saveButton: {
+    backgroundColor: '#27ae60',
+  },
+  apiKeyButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

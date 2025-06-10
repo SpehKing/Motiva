@@ -15,6 +15,27 @@ https://unilj-my.sharepoint.com/:u:/g/personal/ga58402_student_uni-lj_si/EUexJN2
 - 🗃️ Local SQLite database for offline functionality
 - 🎨 Beautiful, modern UI with dark theme
 - 📈 Progress bars and leveling system
+- 🔑 User-configurable OpenAI API key for AI verification
+
+## OpenAI API Key Setup
+
+To use the AI-powered habit verification feature, you need to configure your OpenAI API key:
+
+1. **Get an OpenAI API Key:**
+
+   - Visit [OpenAI's website](https://platform.openai.com/api-keys)
+   - Create an account or sign in
+   - Generate a new API key
+
+2. **Configure in the App:**
+
+   - Open the Motiva app
+   - Tap the settings button (gear icon) in the bottom-right corner
+   - In the settings panel, find the "OpenAI API Key" section
+   - Tap "Set API Key" and enter your API key
+   - The key will be securely stored locally on your device
+
+3. **Note:** The API key is stored locally and never shared with external services except OpenAI for verification.
 
 ## Prerequisites
 
