@@ -128,13 +128,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   cardTextBox: {
-    flex: 2, // 30% of the cardBody
+    flex: 2, 
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 8,
   },
   imageBox: {
-    flex: 1.5, // 40% of the cardBody
+    flex: 1.5, 
     backgroundColor: '#314146',
     padding: 20,
     borderRadius: 10,
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
   cardImage: {
     width: 200,
     height: 120,
-    //marginBottom: 8,
     borderRadius: 8,
   },
   footer: {

@@ -12,11 +12,9 @@ export const initializeDatabase = async () => {
   try {
     console.log('🔄 Initializing database...');
     
-    // Check if tables exist
     const tablesExist = await checkTablesExist();
     
     if (!tablesExist) {
-      // Only create tables if they don't exist
       await createTables();
       console.log('✅ Database tables created successfully');
     } else {
@@ -33,7 +31,6 @@ export const initializeDatabase = async () => {
 // Check if required tables exist
 const checkTablesExist = async (): Promise<boolean> => {
   try {
-    // Try to query the habits table
     await db.run(sql`SELECT 1 FROM habits LIMIT 1`);
     await db.run(sql`SELECT 1 FROM completions LIMIT 1`);
     return true;
@@ -68,11 +65,9 @@ export const resetDatabase = async () => {
   try {
     console.log('🔄 Resetting database...');
     
-    // Delete all completions first (child table)
     await db.run(sql`DELETE FROM completions`);
     console.log('🗑️ Cleared all completions');
     
-    // Delete all habits (parent table)
     await db.run(sql`DELETE FROM habits`);
     console.log('🗑️ Cleared all habits');
     
@@ -83,5 +78,4 @@ export const resetDatabase = async () => {
   }
 };
 
-// Export schema tables for easy access
 export { habits, completions };

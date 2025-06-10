@@ -19,7 +19,7 @@ const chartConfig = {
     r: '6',
     strokeWidth: '2',
   },
-  segments: 3, // Show only 3 segments on Y-axis
+  segments: 3, 
 };
 
 export default function HabitDetailScreen() {
@@ -38,14 +38,13 @@ export default function HabitDetailScreen() {
 
   // Function to fetch weekly data
   const fetchWeeklyData = async () => {
-    if (habitId && habitId !== -1) { // Don't fetch for "New Habit" card
+    if (habitId && habitId !== -1) {
       try {
         setIsLoading(true);
         const weeklyCompletions = await getWeeklyCompletionData(habitId);
         setHabitData(weeklyCompletions);
       } catch (error) {
         console.error('Error fetching weekly data:', error);
-        // Keep default empty data on error
       } finally {
         setIsLoading(false);
       }
@@ -74,7 +73,6 @@ export default function HabitDetailScreen() {
     fetchWeeklyData();
   }, [habitId]);
 
-  // Refresh data when screen comes back into focus (e.g., returning from ActivityCaptureScreen)
   useFocusEffect(
     React.useCallback(() => {
       if (habitId && habitId !== -1) {
@@ -94,8 +92,8 @@ export default function HabitDetailScreen() {
   const bestDayName = daysOfWeek[bestDayIndex];
 
   // Calculate chart Y-axis configuration
-  const maxValue = Math.max(...habitData, 1); // Ensure at least 1
-  const chartMaxValue = Math.max(3, maxValue); // Minimum of 3, or the actual max if higher
+  const maxValue = Math.max(...habitData, 1);
+  const chartMaxValue = Math.max(3, maxValue);
   
   // Prepare chart data for better scaling
   const chartData = [...habitData];
@@ -103,14 +101,13 @@ export default function HabitDetailScreen() {
   // Create dynamic chart config based on data
   const dynamicChartConfig = {
     ...chartConfig,
-    segments: 3, // Always use 3 segments for cleaner display
-    yAxisInterval: Math.ceil(chartMaxValue / 3), // Dynamic interval based on max value
+    segments: 3, 
+    yAxisInterval: Math.ceil(chartMaxValue / 3), 
   };
 
-  const screenWidth = Dimensions.get('window').width - 32; // Full width minus padding
+  const screenWidth = Dimensions.get('window').width - 32; 
   
   const handlePress = () => {
-    // Convert title to a simple string id for the route
     router.push({
       pathname: '/habit/ActivityCaptureScreen',
       params: { color, scanMethod: habitScanMethod, habitId: habitId.toString(), habitTitle }
@@ -118,7 +115,6 @@ export default function HabitDetailScreen() {
   };
 
   const onDelete = () => {
-    // Prevent deletion of the "New Habit" card (id = -1)
     if (habitId === -1) {
       Alert.alert('Cannot Delete', 'This is not a real habit that can be deleted.');
       return;
@@ -137,7 +133,6 @@ export default function HabitDetailScreen() {
               console.log('Deleting habit with ID:', habitId);
               await deleteHabit(habitId);
               console.log('Habit deleted successfully');
-              // Navigate back with refresh parameter to trigger reload
               router.push({
                 pathname: '/',
                 params: { refresh: Date.now().toString() }

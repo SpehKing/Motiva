@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { getHabitCount } from '../db/habitOps';
 
 type CardProps = {
-  iconName: any; // Using 'any' to bypass strict type checking for now
+  iconName: any;
   title: string;
   status: string;
   color?: string;
@@ -27,10 +27,9 @@ export default function Card({ iconName, title, status, scanMethod, color = '#34
   } else if (normalizedStatus === 'done') {
     router.push({
       pathname: '/habit/[id]',
-      params: { id: id, title, iconName, scanMethod, color }, // Use the real database ID
+      params: { id: id, title, iconName, scanMethod, color },
     });
   } else if (normalizedStatus === 'no habit') {
-    // Check habit count before allowing navigation to NewHabit
     try {
       const currentCount = await getHabitCount();
       if (currentCount >= 6) {

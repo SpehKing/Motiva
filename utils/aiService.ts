@@ -31,7 +31,6 @@ const readAsBase64 = async (uri: string) => {
 
 export async function imageUriToBase64(uri: string): Promise<string> {
   const raw = await readAsBase64(uri);
-  // Hermes < Android 12 lacks atob/btoa – polyfill accordingly
   return typeof atob === 'undefined' ? btoa(raw) : raw;
 }
 

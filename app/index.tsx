@@ -46,12 +46,10 @@ export default function MainScreen() {
     try {
       console.log('Adding new habit:', newHabit.title, 'Database initialized:', isInitialized);
       
-      // Wait for database to be initialized if it's not ready yet
       if (!isInitialized) {
         console.log('Database not ready, waiting for initialization...');
-        // Wait up to 10 seconds for initialization
         let attempts = 0;
-        const maxAttempts = 100; // 100 * 100ms = 10 seconds
+        const maxAttempts = 100; 
         
         while (!isInitialized && attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -82,7 +80,7 @@ export default function MainScreen() {
       console.log('Database is ready, saving habit...');
       await saveHabit(newHabit);
       console.log('Habit saved, reloading habits list...');
-      await loadHabits(); // Reload habits from database
+      await loadHabits(); 
       console.log('New habit added successfully');
       Alert.alert('Success', `"${newHabit.title}" habit created successfully!`);
     } catch (error) {
@@ -106,7 +104,7 @@ export default function MainScreen() {
       if (habit && habit.id) {
         const completed = newStatus === 'Done';
         await updateHabitStatus(habit.id, completed);
-        await loadHabits(); // Reload habits from database
+        await loadHabits(); 
       }
     } catch (error) {
       console.error('Error updating habit status:', error);
@@ -142,7 +140,7 @@ export default function MainScreen() {
         try {
           console.log('Processing new habit from params:', params.newHabit);
           const newHabitData = JSON.parse(params.newHabit);
-          setProcessedNewHabit(params.newHabit); // Mark as being processed
+          setProcessedNewHabit(params.newHabit);
           await addNewHabit(newHabitData);
         } catch (error) {
           console.error('Error parsing new habit data:', error);
@@ -154,7 +152,7 @@ export default function MainScreen() {
     if (isInitialized) {
       processNewHabit();
     }
-  }, [params.newHabit, isInitialized, processedNewHabit]); // Include all dependencies
+  }, [params.newHabit, isInitialized, processedNewHabit]);
 
   // Listen for refresh requests
   useEffect(() => {
@@ -169,7 +167,7 @@ export default function MainScreen() {
       try {
         console.log('🚀 Starting database setup...');
         setIsLoading(true);
-        setIsInitialized(false); // Ensure we start with false
+        setIsInitialized(false); 
         
         await initializeDatabase();
         console.log('📊 Database initialized, loading default habits...');
@@ -177,10 +175,10 @@ export default function MainScreen() {
         await initializeDefaultHabits();
         console.log('🏠 Default habits loaded, setting initialization flag...');
         
-        setIsInitialized(true); // Set initialized BEFORE loading habits
+        setIsInitialized(true); 
         console.log('✅ Database setup complete, loading habits...');
         
-        await loadHabits(true); // Skip init check for first load
+        await loadHabits(true); 
         console.log('✅ Database initialized and habits loaded on app startup');
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);
@@ -190,7 +188,7 @@ export default function MainScreen() {
     };
     
     setupDatabase();
-  }, []); // Empty dependency array - run only once on mount
+  }, []); 
 
   // Calculate progress based on completed habits
   const calculateProgress = () => {
@@ -230,7 +228,7 @@ const handleDatabasePopulate = async () => {
   try {
     const success = await populateDatabase();
     if (success) {
-      await loadHabits(true); // Reload habits after populating
+      await loadHabits(true); 
       Alert.alert('Database Populated', 'Database populated with default habits successfully!');
     } else {
       Alert.alert('Database Populate', 'Database population failed. Check console for details.');
@@ -260,9 +258,8 @@ const handleDatabaseReset = async () => {
               setIsLoading(true);
               setIsInitialized(false);
               await resetDatabase();
-              // Don't automatically add default habits after reset - let user choose to populate manually
               setIsInitialized(true);
-              await loadHabits(true); // Skip init check for reset load
+              await loadHabits(true); 
               Alert.alert('Success', 'Database reset successfully! All habits have been removed.');
             } catch (error) {
               console.error('Error resetting database:', error);

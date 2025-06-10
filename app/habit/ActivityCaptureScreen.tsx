@@ -64,7 +64,6 @@ export default function ActivityCaptureScreen() {
       const result = await verifyActivityAI(photoUri, activityDescription);
       
       if (result.verified && habitId) {
-        // Update habit status in database
         try {
           await updateHabitStatus(parseInt(habitId as string), true);
           console.log('Habit marked as completed in database');
@@ -81,7 +80,6 @@ export default function ActivityCaptureScreen() {
             text: 'OK',
             onPress: () => {
               if (result.verified) {
-                // Navigate back to main screen with refresh flag
                 router.push({
                   pathname: '/',
                   params: { refresh: Date.now().toString() }
@@ -106,7 +104,6 @@ export default function ActivityCaptureScreen() {
    * Render guards (permission flow)
    * -----------------------------------------------------------------------*/
   if (!permission) {
-    // Permission state is still loading.
     return <View style={styles.container} />;
   }
 
